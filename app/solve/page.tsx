@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useProblemStore } from "@/store/useProblemStore";
 
 type FeedbackState = "optimal" | "suboptimal" | "incorrect" | null;
@@ -37,6 +37,89 @@ export default function SolvePage() {
     setSubmitError,
     resetProblem,
   } = useProblemStore();
+  // auto-generate when arriving from roadmap
+  const searchParams = useSearchParams();
+
+  // Read the current roadmap problemId from the URL (stable string to use as effect dep)
+  const roadmapProblemId = searchParams.get("problemId");
+
+  React.useEffect(() => {
+    // run whenever roadmapProblemId changes
+    (async () => {
+      try {
+        // nothing to do if no param
+        if (!roadmapProblemId) return;
+
+        // if the requested roadmapProblemId is the same as currently loaded problem -> skip
+        if (problem && String(problem.id) === String(roadmapProblemId)) {
+          return;
+        }
+
+        const qTopic = searchParams.get("topic");
+        const qDifficulty = searchParams.get("difficulty");
+        const qLanguage = searchParams.get("language");
+
+        if (qTopic) setTopic(qTopic);
+        if (qDifficulty) setDifficulty(qDifficulty);
+        if (qLanguage) setLanguage(qLanguage);
+
+        // Fetch the exact problem by id instead of using generic generator
+        try {
+          setIsGenerating(true);
+          setGenError(null);
+
+          // Clear previous problem & editor so UI shows loading state cleanly
+          setProblem(null);
+          setCode("");
+          setSubmissionResult(null);
+          setFeedbackState(null);
+
+          const url = `/api/roadmap/problem?problemId=${encodeURIComponent(
+            roadmapProblemId
+          )}`;
+          const resp = await fetch(url);
+
+          if (!resp.ok) {
+            const txt = await resp.text();
+            setGenError("Failed to load roadmap problem: " + txt);
+            return;
+          }
+
+          const json = await resp.json();
+          // Support both shapes: { problem: {...} } or direct problem doc
+          const p = json?.problem ?? json;
+
+          if (!p || !p.title || !p.description) {
+            setGenError("Invalid problem document from roadmap");
+            return;
+          }
+
+          setProblem({
+            id: String(p._id ?? p.id ?? roadmapProblemId),
+            title: String(p.title),
+            description: String(p.description),
+            examples: Array.isArray(p.examples) ? p.examples.slice(0, 4) : [],
+            constraints: p.constraints ? String(p.constraints) : undefined,
+            visibleTestsCount: Number(p.visibleTestsCount ?? 2),
+            hiddenTestsCount: Number(p.hiddenTestsCount ?? 2),
+          });
+
+          // Reset feedback & editor for the newly loaded problem
+          setSubmissionResult(null);
+          setFeedbackState(null);
+          setCode("");
+        } catch (err) {
+          console.error("Error fetching roadmap problem:", err);
+          setGenError("Failed to load roadmap problem");
+        } finally {
+          setIsGenerating(false);
+        }
+      } catch (e) {
+        console.warn("Auto-generate roadmap failed", e);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roadmapProblemId]); // run when query param changes
 
   const [submissionResult, setSubmissionResult] =
     React.useState<SubmissionResult | null>(null);
