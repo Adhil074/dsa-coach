@@ -177,6 +177,7 @@ export async function POST(request: Request) {
         title: savedProblem.title,
         description: savedProblem.description,
         examples: savedProblem.examples,
+        testCases: savedProblem.testCases,
         constraints: generatedProblem.constraints,
         visibleTestsCount: generatedProblem.visibleTestsCount ?? 2,
         hiddenTestsCount: generatedProblem.hiddenTestsCount ?? 2,

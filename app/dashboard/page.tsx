@@ -50,8 +50,8 @@ export default function DashboardPage() {
         <h1>Start your DSA journey — build interview-ready skills.</h1>
         <p>
           New to DSA?{" "}
-          <Link href="/progress">
-            <span style={{ textDecoration: "underline" }}>60-day roadmap</span>
+          <Link href="/roadmap">
+            <span style={{ textDecoration: "underline" }}> Roadmap</span>
           </Link>
         </p>
 

@@ -1,244 +1,289 @@
-import { NextResponse } from "next/server";
+// app/api/problems/run/route.ts
+export const runtime = "nodejs";
 
-type TestCase = {
+import { NextResponse } from "next/server";
+import vm from "vm";
+import { connectToDatabase } from "../../../../../lib/db";
+import { Problem } from "../../../../../lib/models/problem";
+import { Types } from "mongoose";
+
+type RunRequestBody = {
+  problemId: string;
+  code: string; // user-submitted JS code (string)
+  language?: string; // only "javascript" supported
+  timeoutMs?: number;
+};
+
+type TestCaseItem = {
   input: string;
-  expectedOutput: string;
+  output: string;
   isHidden?: boolean;
 };
 
-type Body = {
-  code?: string;
-  language?: string;
-  tests?: TestCase[];
+type ProblemDoc = {
+  _id?: unknown;
+  title?: string;
+  description?: string;
+  examples?: Array<{ input: string; output: string }>;
+  testCases?: TestCaseItem[];
+  constraints?: string | null;
+  topic?: string;
+  difficulty?: string;
 };
 
-const LANGUAGE_MAP: Record<string, number> = {
-  javascript: 63,
-  python: 71,
-  java: 62,
-  cpp: 54,
-  c: 50,
+/** Naive parser to extract variable names from "a=1;b=[1,2];" style strings */
+function parseArgNamesFromInput(input: string): string[] {
+  const parts = input
+    .split(";")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const names: string[] = [];
+  for (const p of parts) {
+    const m = p.match(/^(?:const|let|var)?\s*([A-Za-z_$][\w$]*)\s*=/);
+    if (m && m[1]) names.push(m[1]);
+  }
+  return names;
+}
+
+/** Find a usable function name in the VM context */
+
+// keep `import vm from "vm"` at top
+const findUserFunctionName = (context: vm.Context): string | null => {
+  const preferred = ["solution", "solve", "handler", "fn"];
+  for (const name of preferred) {
+    const val = (context as Record<string, unknown>)[name];
+    if (typeof val === "function") {
+      const fn = val as (...args: unknown[]) => unknown;
+      if (!fn.toString().includes("[native code]")) return name;
+    }
+  }
+  for (const k of Object.keys(context)) {
+    const val = (context as Record<string, unknown>)[k];
+    if (typeof val === "function") {
+      const fn = val as (...args: unknown[]) => unknown;
+      if (!fn.toString().includes("[native code]")) return k;
+    }
+  }
+  return null;
 };
-
-// Parse input to JSON format
-function parseToJSON(input: string): Record<string, unknown> {
-  const s = (input ?? "").trim();
-  if (!s) return {};
-
-  // Try direct JSON first
+export async function POST(request: Request) {
   try {
-    const maybe = JSON.parse(s);
-    if (typeof maybe === "object" && maybe !== null) return maybe as Record<string, unknown>;
-  } catch {
-    // ignore
-  }
+    const body = (await request
+      .json()
+      .catch(() => ({}))) as Partial<RunRequestBody>;
+    const problemId = String(body.problemId ?? "");
+    const code = String(body.code ?? "");
+    const language = String(body.language ?? "javascript");
+    const timeoutMs = Number(body.timeoutMs ?? 1500);
 
-  // Pattern: nums = [1,2,3], target = 6
-  try {
-    const numsMatch = s.match(/nums\s*=\s*(\[[^\]]*\])/i);
-    const targetMatch = s.match(/target\s*=\s*([-\d]+)/i);
-    if (numsMatch) {
-      const nums = JSON.parse(numsMatch[1]);
-      if (Array.isArray(nums)) {
-        const out: Record<string, unknown> = { nums };
-        if (targetMatch) out.target = Number(targetMatch[1]);
-        return out;
-      }
+    if (!problemId || !code) {
+      return NextResponse.json(
+        { error: "problemId and code are required" },
+        { status: 400 }
+      );
     }
-  } catch {
-    // fallthrough
-  }
-
-  // Two-line format: "1 2 3\n6"
-  const lines = s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  if (lines.length >= 2) {
-    const firstNums = lines[0].split(/[\s,]+/).map((t) => Number(t)).filter((n) => !Number.isNaN(n));
-    const secondNum = Number(lines[1]);
-    if (firstNums.length > 0 && !Number.isNaN(secondNum)) {
-      return { nums: firstNums, target: secondNum };
+    if (language !== "javascript") {
+      return NextResponse.json(
+        { error: "Only javascript is supported for runner" },
+        { status: 400 }
+      );
     }
-  }
-
-  // Single line: "1 2 3 6" (last is target)
-  const tokens = s.split(/[\s,]+/).map((t) => t.trim()).filter(Boolean);
-  const numsCandidate = tokens.map((t) => Number(t)).filter((n) => !Number.isNaN(n));
-  if (numsCandidate.length >= 2) {
-    return { nums: numsCandidate.slice(0, -1), target: numsCandidate[numsCandidate.length - 1] };
-  }
-
-  return { raw: s };
-}
-
-function normalizeOutput(s: string | null | undefined) {
-  if (s == null) return "";
-  return String(s).replace(/\r\n/g, "\n").trim();
-}
-
-// Run single test on Judge0
-async function runOneTest(
-  languageId: number,
-  sourceCode: string,
-  stdinJsonString: string
-): Promise<{
-  stdout: string;
-  stderr: string;
-  status: string;
-  time: string | null;
-  memory: string | null;
-}> {
-  const judge0Url = process.env.JUDGE0_API_URL || "https://judge0-ce.p.rapidapi.com";
-  const apiKey = process.env.JUDGE0_API_KEY || process.env.RAPIDAPI_JUDGE0_KEY;
-
-  if (!apiKey) {
-    throw new Error("JUDGE0_API_KEY or RAPIDAPI_JUDGE0_KEY is not set in environment variables");
-  }
-
-  const url = `${judge0Url}/submissions?base64_encoded=false&wait=true`;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  // RapidAPI specific headers
-  if (judge0Url.includes("rapidapi")) {
-    headers["X-RapidAPI-Key"] = apiKey;
-    headers["X-RapidAPI-Host"] = "judge0-ce.p.rapidapi.com";
-  } else {
-    // Self-hosted Judge0
-    headers["Authorization"] = `Bearer ${apiKey}`;
-  }
-
-  const body = {
-    source_code: sourceCode,
-    language_id: languageId,
-    stdin: stdinJsonString,
-  };
-
-  console.log("Judge0 Request:", { url, headers: Object.keys(headers), bodyLength: sourceCode.length });
-
-  const resp = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  console.log("Judge0 Response Status:", resp.status);
-
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    console.error("Judge0 Error Response:", text);
-    throw new Error(`Judge0 API error (${resp.status}): ${text}`);
-  }
-
-  const data = await resp.json();
-  console.log("Judge0 Response Data:", data);
-
-  return {
-    stdout: data.stdout ?? "",
-    stderr: data.stderr ?? "",
-    status: data.status?.description ?? "unknown",
-    time: data.time ?? null,
-    memory: data.memory ?? null,
-  };
-}
-
-// Main route handler
-export async function POST(req: Request) {
-  try {
-    const body: Body = await req.json().catch(() => ({}));
-
-    const code = body.code;
-    const language = body.language ?? "javascript";
-    const tests = Array.isArray(body.tests) ? body.tests : [];
-
-    // Validation
-    if (!code || typeof code !== "string") {
-      return NextResponse.json({ error: "code (string) is required" }, { status: 400 });
-    }
-    if (!language || typeof language !== "string") {
-      return NextResponse.json({ error: "language is required" }, { status: 400 });
-    }
-    if (!tests.length) {
-      return NextResponse.json({ error: "tests (non-empty array) required" }, { status: 400 });
+    if (!Types.ObjectId.isValid(problemId)) {
+      return NextResponse.json({ error: "Invalid problemId" }, { status: 400 });
     }
 
-    const langKey = language.toLowerCase();
-    const languageId = LANGUAGE_MAP[langKey];
-    if (!languageId) {
-      return NextResponse.json({ error: `Unsupported language: ${language}` }, { status: 400 });
+    await connectToDatabase();
+
+    const problemDocRaw = await Problem.findById(problemId).lean();
+    const problemDoc = problemDocRaw as unknown as ProblemDoc | null;
+    if (!problemDoc) {
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    const results: Array<{
+    const testCases = Array.isArray(problemDoc.testCases)
+      ? problemDoc.testCases
+      : [];
+    if (testCases.length === 0) {
+      return NextResponse.json(
+        { error: "No test cases available for this problem" },
+        { status: 400 }
+      );
+    }
+
+    // sandbox globals template
+    const sandboxGlobalsTemplate: Record<string, unknown> = {
+      console: {
+        log: (..._args: unknown[]) => {
+          /* no-op */
+        },
+        error: (..._args: unknown[]) => {
+          /* no-op */
+        },
+      },
+      Date,
+      // allow module.exports style
+      module: { exports: {} },
+      exports: {},
+    };
+
+    // Pre-compile user code once (compilation errors will be caught here)
+    let userScript: vm.Script;
+    try {
+      userScript = new vm.Script(String(code), { filename: "user-code.js" });
+    } catch (compileErr) {
+      const msg =
+        compileErr instanceof Error ? compileErr.message : String(compileErr);
+      return NextResponse.json(
+        { error: "Compilation error: " + msg },
+        { status: 400 }
+      );
+    }
+
+    type TestResult = {
       input: string;
-      expectedOutput: string;
-      stdout: string;
-      stderr?: string;
-      status: string;
+      expected: string;
       passed: boolean;
-      time?: string | null;
-      memory?: string | null;
+      actual?: unknown;
+      error?: string;
+      timeMs?: number;
       isHidden?: boolean;
-    }> = [];
+    };
 
-    let passedCount = 0;
+    const results: TestResult[] = [];
 
-    // Run tests sequentially
-    for (const tc of tests) {
+    // Run each testcase in its own fresh context to avoid state bleed
+    for (const tc of testCases) {
+      const inputStr = String(tc.input ?? "");
+      const expectedStr = String(tc.output ?? "");
+      const testStart = Date.now();
+
       try {
-        const rawInput = tc.input ?? "";
-        const expected = tc.expectedOutput ?? "";
-        const parsed = parseToJSON(rawInput);
-        const stdinForJudge = JSON.stringify(parsed);
+        const ctx = vm.createContext(Object.assign({}, sandboxGlobalsTemplate));
+        // run user's code
+        userScript.runInContext(ctx, { timeout: Math.max(500, timeoutMs) });
 
-        const r = await runOneTest(languageId, code, stdinForJudge);
+        // run the input assignments (e.g., nums=[...];target=9;)
+        if (inputStr.trim().length > 0) {
+          const inputScript = new vm.Script(inputStr, {
+            filename: "test-input.js",
+          });
+          inputScript.runInContext(ctx, {
+            timeout: Math.max(200, timeoutMs / 4),
+          });
+        }
 
-        const stdout = r.stdout ?? "";
-        const outNorm = normalizeOutput(stdout);
-        const expectedNorm = normalizeOutput(expected);
+        // determine arg names
+        const argNames = parseArgNamesFromInput(inputStr);
 
-        const passed = outNorm === expectedNorm;
+        // find candidate function name
+        const fnName = findUserFunctionName(ctx);
+        if (!fnName) {
+          results.push({
+            input: inputStr,
+            expected: expectedStr,
+            passed: false,
+            error:
+              "No callable function found in submitted code (look for 'solution'/'solve' or any top-level function).",
+            timeMs: Date.now() - testStart,
+            isHidden: Boolean(tc.isHidden),
+          });
+          continue;
+        }
 
-        if (passed) passedCount++;
-
-        results.push({
-          input: rawInput,
-          expectedOutput: expected,
-          stdout,
-          stderr: r.stderr ?? undefined,
-          status: r.status ?? "unknown",
-          passed,
-          time: r.time ?? null,
-          memory: r.memory ?? null,
-          isHidden: !!tc.isHidden,
+        // build invocation expression referencing the arg names, fallback to no-arg call
+        const argsExpr = argNames.length > 0 ? argNames.join(", ") : "";
+        const callSrc = `
+          (function(){
+            try {
+              const fn = ${fnName};
+              const result = (typeof fn === "function") ? fn(${argsExpr}) : undefined;
+              return { ok: true, value: result };
+            } catch (e) {
+              return { ok: false, error: (e && e.message) ? e.message : String(e) };
+            }
+          })()
+        `;
+        const callScript = new vm.Script(callSrc, {
+          filename: "call-user-fn.js",
         });
-      } catch (testError) {
-        console.error("Test execution error:", testError);
+        const callRes = callScript.runInContext(ctx, {
+          timeout: Math.max(200, timeoutMs / 2),
+        }) as { ok: boolean; value?: unknown; error?: string };
+
+        if (!callRes || !callRes.ok) {
+          results.push({
+            input: inputStr,
+            expected: expectedStr,
+            passed: false,
+            error: callRes?.error ?? "Runtime error during function call",
+            timeMs: Date.now() - testStart,
+            isHidden: Boolean(tc.isHidden),
+          });
+          continue;
+        }
+
+        const actual = callRes.value;
+
+        // compare actual vs expected: try JSON.parse expected then stringify both
+        let expectedParsed: unknown = expectedStr;
+        try {
+          expectedParsed = JSON.parse(expectedStr);
+        } catch {
+          expectedParsed = expectedStr;
+        }
+
+        const actualString = (() => {
+          try {
+            return JSON.stringify(actual);
+          } catch {
+            return String(actual);
+          }
+        })();
+
+        const expectedString = (() => {
+          try {
+            return JSON.stringify(expectedParsed);
+          } catch {
+            return String(expectedParsed);
+          }
+        })();
+
+        const passed = actualString === expectedString;
+
         results.push({
-          input: tc.input,
-          expectedOutput: tc.expectedOutput,
-          stdout: "",
-          stderr: testError instanceof Error ? testError.message : "Test execution failed",
-          status: "Error",
+          input: inputStr,
+          expected: expectedStr,
+          passed,
+          actual,
+          timeMs: Date.now() - testStart,
+          isHidden: Boolean(tc.isHidden),
+        });
+      } catch (err) {
+        const e = err instanceof Error ? err.message : String(err);
+        results.push({
+          input: inputStr,
+          expected: expectedStr,
           passed: false,
-          isHidden: !!tc.isHidden,
+          error: e,
+          timeMs: Date.now() - testStart,
+          isHidden: Boolean(tc.isHidden),
         });
       }
     }
 
+    const passedCount = results.filter((r) => r.passed).length;
     const total = results.length;
-    const solved = results.every((x) => x.passed);
+    const success = total > 0 && passedCount === total;
 
     return NextResponse.json({
-      results,
+      success,
       passedCount,
       total,
-      solved,
+      results,
     });
-  } catch (err) {
-    console.error("Run tests error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Server error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Runner error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

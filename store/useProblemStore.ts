@@ -1,6 +1,120 @@
-import { create } from 'zustand';
+// //dsa-coach\store\useProblemStore.ts
+// import { create } from 'zustand';
 
-// Types
+// // Types
+// type Example = {
+//   input: string;
+//   output: string;
+// };
+
+// type Problem = {
+//   testCases: boolean;
+//   id: string;
+//   title: string;
+//   description: string;
+//   examples: Example[];
+//   constraints?: string;
+//   visibleTestsCount?: number;
+//   hiddenTestsCount?: number;
+// };
+
+// type SubmissionResult = {
+//   passed?: number;
+//   total?: number;
+//   time?: string;
+//   space?: string;
+//   analysis?: string;
+//   lineFeedback?: string[];
+// };
+
+// // Store State Type
+// type ProblemStore = {
+//   // Problem generation state
+//   topic: string;
+//   difficulty: string;
+//   language: string;
+//   problem: Problem | null;
+//   isGenerating: boolean;
+//   genError: string | null;
+
+//   // Code submission state
+//   code: string;
+//   isSubmitting: boolean;
+//   submissionResult: SubmissionResult | null;
+//   submitError: string | null;
+
+//   // Actions to update state
+//   setTopic: (topic: string) => void;
+//   setDifficulty: (difficulty: string) => void;
+//   setLanguage: (language: string) => void;
+//   setProblem: (problem: Problem | null) => void;
+//   setIsGenerating: (isGenerating: boolean) => void;
+//   setGenError: (error: string | null) => void;
+//   setCode: (code: string) => void;
+//   setIsSubmitting: (isSubmitting: boolean) => void;
+//   setSubmissionResult: (result: SubmissionResult | null) => void;
+//   setSubmitError: (error: string | null) => void;
+
+//   // Reset functions
+//   resetProblem: () => void;
+//   resetSubmission: () => void;
+//   resetAll: () => void;
+// };
+
+// // Initial state
+// const initialState = {
+//   topic: 'arrays',
+//   difficulty: 'easy',
+//   language: 'javascript',
+//   problem: null,
+//   isGenerating: false,
+//   genError: null,
+//   code: '',
+//   isSubmitting: false,
+//   submissionResult: null,
+//   submitError: null,
+// };
+
+// // Create store
+// export const useProblemStore = create<ProblemStore>((set) => ({
+//   ...initialState,
+
+//   // Setters
+//   setTopic: (topic) => set({ topic }),
+//   setDifficulty: (difficulty) => set({ difficulty }),
+//   setLanguage: (language) => set({ language }),
+//   setProblem: (problem) => set({ problem }),
+//   setIsGenerating: (isGenerating) => set({ isGenerating }),
+//   setGenError: (genError) => set({ genError }),
+//   setCode: (code) => set({ code }),
+//   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
+//   setSubmissionResult: (submissionResult) => set({ submissionResult }),
+//   setSubmitError: (submitError) => set({ submitError }),
+
+//   // Reset functions
+//   resetProblem: () =>
+//     set({
+//       problem: null,
+//       genError: null,
+//       isGenerating: false,
+//     }),
+
+//   resetSubmission: () =>
+//     set({
+//       code: '',
+//       submissionResult: null,
+//       submitError: null,
+//       isSubmitting: false,
+//     }),
+
+//   resetAll: () => set(initialState),
+// }));
+
+// dsa-coach/store/useProblemStore.ts
+import { create } from "zustand";
+
+/* ---------- Types ---------- */
+
 type Example = {
   input: string;
   output: string;
@@ -12,22 +126,26 @@ type Problem = {
   description: string;
   examples: Example[];
   constraints?: string;
+
+  // ✅ REQUIRED for evaluation
+  optimalTime?: string | null;
+  optimalSpace?: string | null;
+
   visibleTestsCount?: number;
   hiddenTestsCount?: number;
 };
 
 type SubmissionResult = {
-  passed?: number;
-  total?: number;
-  time?: string;
-  space?: string;
-  analysis?: string;
-  lineFeedback?: string[];
+  isCorrect?: boolean;
+  isOptimal?: boolean;
+  feedback?: string;
+  improvements?: string;
 };
 
-// Store State Type
+/* ---------- Store Type ---------- */
+
 type ProblemStore = {
-  // Problem generation state
+  // generation
   topic: string;
   difficulty: string;
   language: string;
@@ -35,49 +153,51 @@ type ProblemStore = {
   isGenerating: boolean;
   genError: string | null;
 
-  // Code submission state
+  // submission
   code: string;
   isSubmitting: boolean;
   submissionResult: SubmissionResult | null;
   submitError: string | null;
 
-  // Actions to update state
-  setTopic: (topic: string) => void;
-  setDifficulty: (difficulty: string) => void;
-  setLanguage: (language: string) => void;
-  setProblem: (problem: Problem | null) => void;
-  setIsGenerating: (isGenerating: boolean) => void;
-  setGenError: (error: string | null) => void;
-  setCode: (code: string) => void;
-  setIsSubmitting: (isSubmitting: boolean) => void;
-  setSubmissionResult: (result: SubmissionResult | null) => void;
-  setSubmitError: (error: string | null) => void;
+  // setters
+  setTopic: (v: string) => void;
+  setDifficulty: (v: string) => void;
+  setLanguage: (v: string) => void;
+  setProblem: (v: Problem | null) => void;
+  setIsGenerating: (v: boolean) => void;
+  setGenError: (v: string | null) => void;
+  setCode: (v: string) => void;
+  setIsSubmitting: (v: boolean) => void;
+  setSubmissionResult: (v: SubmissionResult | null) => void;
+  setSubmitError: (v: string | null) => void;
 
-  // Reset functions
+  // resets
   resetProblem: () => void;
   resetSubmission: () => void;
   resetAll: () => void;
 };
 
-// Initial state
+/* ---------- Initial State ---------- */
+
 const initialState = {
-  topic: 'arrays',
-  difficulty: 'easy',
-  language: 'javascript',
+  topic: "arrays",
+  difficulty: "easy",
+  language: "javascript",
   problem: null,
   isGenerating: false,
   genError: null,
-  code: '',
+  code: "",
   isSubmitting: false,
   submissionResult: null,
   submitError: null,
 };
 
-// Create store
+/* ---------- Store ---------- */
+
 export const useProblemStore = create<ProblemStore>((set) => ({
   ...initialState,
 
-  // Setters
+  // setters
   setTopic: (topic) => set({ topic }),
   setDifficulty: (difficulty) => set({ difficulty }),
   setLanguage: (language) => set({ language }),
@@ -89,7 +209,7 @@ export const useProblemStore = create<ProblemStore>((set) => ({
   setSubmissionResult: (submissionResult) => set({ submissionResult }),
   setSubmitError: (submitError) => set({ submitError }),
 
-  // Reset functions
+  // resets
   resetProblem: () =>
     set({
       problem: null,
@@ -99,11 +219,11 @@ export const useProblemStore = create<ProblemStore>((set) => ({
 
   resetSubmission: () =>
     set({
-      code: '',
+      code: "",
       submissionResult: null,
       submitError: null,
       isSubmitting: false,
     }),
 
-  resetAll: () => set(initialState),
+  resetAll: () => set({ ...initialState }),
 }));
