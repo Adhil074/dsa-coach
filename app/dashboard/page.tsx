@@ -74,7 +74,7 @@ export default function DashboardPage() {
           <Link href="/progress">Progress</Link>
         </div>
         <div>
-          <Link href="/mock-interview">Mock Interview</Link>
+          <Link href="/ai">AI Assistant</Link>
         </div>
       </section>
 

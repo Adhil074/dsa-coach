@@ -448,8 +448,9 @@ export default function SolvePage(): JSX.Element {
     }
   }
 
-  function redirectToChatBot(arg0: string) {
-    throw new Error("Function not implemented.");
+  function redirectToChatBot(mode: "explain" | "solution") {
+    if (!localProblem) return;
+    router.push(`/ai?mode=${mode}&problemId=${localProblem?.id}`);
   }
 
   /* ----------------------
@@ -726,7 +727,6 @@ export default function SolvePage(): JSX.Element {
             <div className="modal-actions">
               <button
                 onClick={() => {
-                  setShowSolutionModal(false);
                   redirectToChatBot("explain");
                 }}
               >
@@ -734,7 +734,6 @@ export default function SolvePage(): JSX.Element {
               </button>
               <button
                 onClick={() => {
-                  setShowSolutionModal(false);
                   redirectToChatBot("solution");
                 }}
               >
