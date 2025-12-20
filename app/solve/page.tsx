@@ -3,10 +3,10 @@
 import React, { JSX } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProblemStore } from "@/store/useProblemStore";
+import Editor from "@monaco-editor/react";
 
-/* ----------------------
-   Strict domain types
-   ---------------------- */
+//Strict domain types
+
 type ExampleItem = {
   input: string;
   output: string;
@@ -60,9 +60,8 @@ type SubmissionResult = {
   improvements?: string;
 };
 
-/* ----------------------
-   Safe parsing utilities
-   ---------------------- */
+//Safe parsing utilities
+
 function isString(v: unknown): v is string {
   return typeof v === "string";
 }
@@ -160,9 +159,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
   };
 }
 
-/* ----------------------
-   Component
-   ---------------------- */
+//component
 export default function SolvePage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -182,7 +179,6 @@ export default function SolvePage(): JSX.Element {
     setGenError,
     setIsSubmitting,
     setSubmitError,
-    resetProblem,
   } = useProblemStore();
 
   const [localProblem, setLocalProblem] = React.useState<LocalProblem | null>(
@@ -194,15 +190,18 @@ export default function SolvePage(): JSX.Element {
   const [feedbackState, setFeedbackState] = React.useState<FeedbackState>(null);
   const [showSolutionModal, setShowSolutionModal] =
     React.useState<boolean>(false);
+  const TEMPLATE = `function solution(){
+    
+    }`;
 
-  // NEW: AI hints states
+  // ai hints states
   const [aiHints, setAiHints] = React.useState<string[] | null>(null);
   const [showHints, setShowHints] = React.useState<boolean>(false);
 
   // roadmap id from URL query
   const roadmapProblemId = searchParams.get("problemId");
 
-  // Auto-load a roadmap problem by id (if present)
+  // auto-load a roadmap problem by id (if present)
   React.useEffect(() => {
     (async () => {
       if (!roadmapProblemId) return;
@@ -251,9 +250,8 @@ export default function SolvePage(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roadmapProblemId]);
 
-  /* ----------------------
-     Generate problem (server generator)
-     ---------------------- */
+  //generate problem (server generator)
+
   async function handleGenerate(e?: React.FormEvent) {
     if (e) e.preventDefault();
     setIsGenerating(true);
@@ -296,9 +294,7 @@ export default function SolvePage(): JSX.Element {
     }
   }
 
-  /* ----------------------
-   Submit solution (runner + save + AI evaluation)
-   ---------------------- */
+  //submit solution (runner + save + AI evaluation)
 
   async function handleSubmitSolution(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -324,7 +320,7 @@ export default function SolvePage(): JSX.Element {
       return;
     }
 
-    /* ---------- Runner types ---------- */
+    //runner types
     type RunnerResult = {
       input: string;
       expected: string;
@@ -343,7 +339,7 @@ export default function SolvePage(): JSX.Element {
     };
 
     try {
-      /* ---------- 1) Run code ---------- */
+      //1) run code
       const runResp = await fetch("/api/problems/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -375,7 +371,7 @@ export default function SolvePage(): JSX.Element {
           : [],
       };
 
-      /* ---------- 2) AI evaluation (ONLY truth) ---------- */
+      //2) ai evaluation (ONLY truth)
       const aiResp = await fetch("/api/ai/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -408,7 +404,7 @@ export default function SolvePage(): JSX.Element {
 
       const solvedByAI = aiJson.verdict !== "incorrect";
 
-      /* ---------- 3) Save submission ---------- */
+      //3) save submission
       const saveResp = await fetch("/api/problems/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -425,7 +421,7 @@ export default function SolvePage(): JSX.Element {
         setSubmitError("Save error: " + txt);
       }
 
-      /* ---------- 4) Update UI from AI ---------- */
+      //4) update UI from AI
       setSubmissionResult({
         isCorrect: solvedByAI,
         isOptimal: aiJson.verdict === "correct_optimal",
@@ -453,22 +449,40 @@ export default function SolvePage(): JSX.Element {
     router.push(`/ai?mode=${mode}&problemId=${localProblem?.id}`);
   }
 
-  /* ----------------------
-     UI
-     ---------------------- */
-  return (
-    <main>
-      <header>
-        <h1>DSA Problem Solver</h1>
-        <p>Generate, solve, and learn from optimal solutions</p>
-      </header>
+  //ui
 
-      <section>
-        <h2>Generate Problem</h2>
-        <form onSubmit={handleGenerate}>
-          <div>
-            <label>Topic</label>
-            <select value={topic} onChange={(e) => setTopic(e.target.value)}>
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
+      {" "}
+      <header className="mb-8">
+        {" "}
+        <div className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            ← Back
+          </button>
+        </div>
+        <h1 className="text-3xl font-bold">DSA Problem Solver</h1>{" "}
+        <p className="text-slate-400 mt-1">
+          {" "}
+          Generate, solve, and learn from optimal solutions{" "}
+        </p>{" "}
+      </header>
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold mb-4">Generate Problem</h2>
+        <form
+          onSubmit={handleGenerate}
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+        >
+          <div className="flex flex-col">
+            <label className="text-sm mb-1">Topic</label>
+            <select
+              className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+            >
               <option value="arrays">Arrays</option>
               <option value="strings">Strings</option>
               <option value="graphs">Graphs</option>
@@ -477,9 +491,10 @@ export default function SolvePage(): JSX.Element {
             </select>
           </div>
 
-          <div>
-            <label>Difficulty</label>
+          <div className="flex flex-col">
+            <label className="text-sm mb-1">Difficulty</label>
             <select
+              className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
             >
@@ -489,9 +504,10 @@ export default function SolvePage(): JSX.Element {
             </select>
           </div>
 
-          <div>
-            <label>Language</label>
+          <div className="flex flex-col">
+            <label className="text-sm mb-1">Language</label>
             <select
+              className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
             >
@@ -502,115 +518,143 @@ export default function SolvePage(): JSX.Element {
             </select>
           </div>
 
-          <button type="submit" disabled={isGenerating}>
+          <button
+            type="submit"
+            disabled={isGenerating}
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded px-4 py-2"
+          >
             {isGenerating ? "Generating..." : "Generate Problem"}
           </button>
 
-          {genError && <p className="error">{genError}</p>}
+          {genError && <p className="text-red-400 col-span-full">{genError}</p>}
         </form>
       </section>
-
       {localProblem && (
         <section className="solve-container">
-          <div className="solve-layout">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="problem-column">
-              <div className="problem-container">
-                <h2>{localProblem.title}</h2>
-                <div className="problem-card">
-                  <h3>Description</h3>
-                  <p>{localProblem.description}</p>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <h2 className="text-2xl font-bold mb-4">
+                  {localProblem.title}
+                </h2>
 
-                  {localProblem.constraints && (
-                    <>
-                      <h4>Constraints</h4>
-                      <p>{localProblem.constraints}</p>
-                    </>
-                  )}
+                <h3 className="font-semibold mb-1">Description</h3>
+                <p className="text-slate-300 mb-4">
+                  {localProblem.description}
+                </p>
 
-                  <h4>Examples</h4>
-                  <ul className="examples-list">
-                    {localProblem.examples.map(
-                      (ex: ExampleItem, idx: number) => (
-                        <li key={idx}>
-                          <strong>Input:</strong> {ex.input}
-                          <br />
-                          <strong>Output:</strong> {ex.output}
-                        </li>
-                      )
-                    )}
-                  </ul>
+                {localProblem.constraints && (
+                  <>
+                    <h4 className="font-semibold">Constraints</h4>
+                    <p className="text-slate-400 mb-4">
+                      {localProblem.constraints}
+                    </p>
+                  </>
+                )}
 
-                  {localProblem.testCases.length > 0 && (
-                    <>
-                      <h4>Test Cases (visible)</h4>
-                      <ul className="testcases-list">
-                        {localProblem.testCases
-                          .filter((tc) => !tc.isHidden)
-                          .map((tc: TestCaseItem, idx: number) => (
-                            <li key={idx}>
-                              <strong>Input:</strong> {tc.input}
-                              <br />
-                              <strong>Output:</strong> {tc.output}
-                            </li>
-                          ))}
-                      </ul>
-                    </>
-                  )}
+                <h4 className="font-semibold">Examples</h4>
+                <ul className="mt-2 space-y-2">
+                  {localProblem.examples.map((ex: ExampleItem, idx: number) => (
+                    <li key={idx} className="bg-slate-800 rounded p-3 text-sm">
+                      <strong>Input:</strong> {ex.input}
+                      <br />
+                      <strong>Output:</strong> {ex.output}
+                    </li>
+                  ))}
+                </ul>
 
-                  <p className="test-info">
-                    Visible tests: {localProblem.visibleTestsCount} | Hidden
-                    tests: {localProblem.hiddenTestsCount}
-                  </p>
-                </div>
+                {localProblem.testCases.length > 0 && (
+                  <>
+                    <h4 className="font-semibold mt-4">Test Cases (visible)</h4>
+                    <ul className="mt-2 space-y-2">
+                      {localProblem.testCases
+                        .filter((tc) => !tc.isHidden)
+                        .map((tc: TestCaseItem, idx: number) => (
+                          <li
+                            key={idx}
+                            className="bg-slate-800 rounded p-3 text-sm"
+                          >
+                            <strong>Input:</strong> {tc.input}
+                            <br />
+                            <strong>Output:</strong> {tc.output}
+                          </li>
+                        ))}
+                    </ul>
+                  </>
+                )}
+
+                <p className="text-xs text-slate-500 mt-4">
+                  Visible tests: {localProblem.visibleTestsCount} | Hidden
+                  tests: {localProblem.hiddenTestsCount}
+                </p>
               </div>
             </div>
 
             <div className="editor-column">
-              <div className="code-section">
-                <h2> Your Solution</h2>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <h2 className="text-xl font-semibold mb-2">Your Solution</h2>
 
                 <form onSubmit={handleSubmitSolution}>
-                  <p
-                    style={{
-                      color: "#ffaa00",
-                      fontSize: "0.9rem",
-                      marginBottom: "6px",
+                  <Editor
+                    onMount={(editor) => {
+                      if (!localCode || localCode.trim() === "") {
+                        editor.setValue(TEMPLATE);
+                        setLocalCode(TEMPLATE);
+                        editor.setPosition({ lineNumber: 2, column: 1 });
+                      }
+                      editor.updateOptions({ contextmenu: true });
                     }}
-                  >
-                    ⚠️ Your function must be named <strong>solution</strong>.
-                    Example:{" "}
-                    <code>
-                      function solution(...) {"{"} ... {"}"}
-                    </code>
-                  </p>
-                  <textarea
+                    height="400px"
+                    language={
+                      language === "javascript" ? "javascript" : language
+                    }
+                    theme="vs-dark"
                     value={localCode}
-                    onChange={(e) => setLocalCode(e.target.value)}
-                    placeholder="// Write your solution here..."
-                    className="editor"
+                    onChange={(value) => setLocalCode(value ?? "")}
+                    options={{
+                      fontSize: 16,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      wordWrap: "on",
+                      automaticLayout: true,
+                      contextmenu: true,
+                    }}
                   />
 
                   <button
                     type="submit"
                     disabled={isSubmitting || !localProblem}
+                    className="mt-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded px-4 py-2"
                   >
                     {isSubmitting ? "Submitting..." : "Submit Solution"}
                   </button>
 
-                  {submitError && <p className="error">{submitError}</p>}
+                  {submitError && (
+                    <p className="text-red-400 mt-2">{submitError}</p>
+                  )}
                 </form>
               </div>
 
               {feedbackState && submissionResult && (
-                <div className={`feedback feedback-${feedbackState}`}>
-                  <h2>{submissionResult.feedback}</h2>
+                <div
+                  className={`mt-4 border rounded-xl p-5 bg-slate-900 border-slate-800`}
+                >
+                  <h2 className="text-lg font-bold mb-2">
+                    {submissionResult.feedback}
+                  </h2>
 
                   {feedbackState === "optimal" && (
-                    <div className="optimal-actions">
-                      <button onClick={() => handleGenerate()}>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleGenerate()}
+                        className="bg-indigo-600 rounded px-3 py-2"
+                      >
                         Next Problem
                       </button>
-                      <button onClick={() => router.push("/dashboard")}>
+                      <button
+                        onClick={() => router.push("/dashboard")}
+                        className="bg-slate-700 rounded px-3 py-2"
+                      >
                         Back to Dashboard
                       </button>
                     </div>
@@ -618,10 +662,11 @@ export default function SolvePage(): JSX.Element {
 
                   {feedbackState === "suboptimal" && (
                     <div>
-                      <h3> Suggested Improvements</h3>
-                      <p>{submissionResult.improvements}</p>
+                      <h3 className="font-semibold">Suggested Improvements</h3>
+                      <p className="text-slate-300">
+                        {submissionResult.improvements}
+                      </p>
 
-                      {/* AI Hints toggle (optional) */}
                       {aiHints && aiHints.length > 0 && (
                         <div style={{ marginTop: 8, marginBottom: 8 }}>
                           <button
@@ -635,7 +680,7 @@ export default function SolvePage(): JSX.Element {
                             <div
                               style={{
                                 marginTop: 8,
-                                background: "#f7f7f7",
+                                background: "#020617",
                                 padding: 8,
                                 borderRadius: 6,
                               }}
@@ -653,22 +698,22 @@ export default function SolvePage(): JSX.Element {
                         </div>
                       )}
 
-                      <div className="actions">
-                        <button onClick={() => setShowSolutionModal(true)}>
-                          See Optimal Solution
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowSolutionModal(true)}
+                        className="mt-2 bg-indigo-600 rounded px-3 py-2"
+                      >
+                        See Optimal Solution
+                      </button>
                     </div>
                   )}
 
                   {feedbackState === "incorrect" && (
                     <div>
-                      <p>
+                      <p className="text-slate-300">
                         Oops — your solution is incorrect. Review the problem
                         and try again.
                       </p>
 
-                      {/* AI Hints toggle (optional) */}
                       {aiHints && aiHints.length > 0 && (
                         <div style={{ marginTop: 8, marginBottom: 8 }}>
                           <button
@@ -682,7 +727,6 @@ export default function SolvePage(): JSX.Element {
                             <div
                               style={{
                                 marginTop: 8,
-
                                 padding: 8,
                                 borderRadius: 6,
                               }}
@@ -700,11 +744,12 @@ export default function SolvePage(): JSX.Element {
                         </div>
                       )}
 
-                      <div className="actions">
-                        <button onClick={() => setShowSolutionModal(true)}>
-                          Show Solution
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowSolutionModal(true)}
+                        className="mt-2 bg-indigo-600 rounded px-3 py-2"
+                      >
+                        Show Solution
+                      </button>
                     </div>
                   )}
                 </div>
@@ -713,22 +758,24 @@ export default function SolvePage(): JSX.Element {
           </div>
         </section>
       )}
-
       {showSolutionModal && (
-        <div className="modal">
-          <div className="modal-content">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md">
             <button
-              className="close-btn"
+              className="absolute top-3 right-4"
               onClick={() => setShowSolutionModal(false)}
             >
               ✕
             </button>
-            <h2>How would you like to proceed?</h2>
-            <div className="modal-actions">
+            <h2 className="text-xl font-bold mb-4">
+              How would you like to proceed?
+            </h2>
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   redirectToChatBot("explain");
                 }}
+                className="bg-slate-700 rounded px-4 py-2"
               >
                 Explain Concept First
               </button>
@@ -736,6 +783,7 @@ export default function SolvePage(): JSX.Element {
                 onClick={() => {
                   redirectToChatBot("solution");
                 }}
+                className="bg-indigo-600 rounded px-4 py-2"
               >
                 Get Direct Solution
               </button>

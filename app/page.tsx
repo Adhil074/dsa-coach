@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function WelcomePage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
       <div className="w-full max-w-md space-y-4 text-center">
       <h1 className="text-3xl font-bold">Welcome to DSA Coach</h1>
       <p className="text-gray-400">

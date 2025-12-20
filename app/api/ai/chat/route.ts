@@ -1,76 +1,99 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
-type ChatRequest = {
-  message: string;
-};
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as ChatRequest;
+    const { message, context } = await req.json();
 
-    if (!body.message || !body.message.trim()) {
-      return NextResponse.json({ reply: "No message provided" });
+    if (!message) {
+      return NextResponse.json(
+        { error: "Message is required" },
+        { status: 400 }
+      );
     }
 
-    // Abort if HF is slow
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Gemini API key not configured" },
+        { status: 500 }
+      );
+    }
 
-    const res = await fetch(
-      "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+    // 🔥 Single strong system prompt for DSA Coach
+    let systemPrompt = `
+You are an expert DSA coach for coding interviews.
+
+Your job:
+- Teach Data Structures & Algorithms clearly
+- Explain concepts step-by-step in simple language
+- Analyze time & space complexity
+- Give optimized approaches
+- Help users improve suboptimal solutions
+- Provide hints instead of direct answers when possible
+- Be interview-focused and practical
+
+User question:
+${message}
+`;
+
+    // Preserve conversation context (unchanged logic)
+    if (context && context.length > 0) {
+      const contextStr = context
+        .map(
+          (msg: { role: string; content: string }) =>
+            `${msg.role}: ${msg.content}`
+        )
+        .join("\n");
+
+      systemPrompt = `Previous conversation:
+${contextStr}
+
+${systemPrompt}`;
+    }
+
+    // Gemini API call (unchanged)
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
-        signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputs: body.message,
-          parameters: {
-            max_new_tokens: 300,
-            temperature: 0.7,
-            return_full_text: false,
-          },
+          contents: [
+            {
+              parts: [
+                {
+                  text: systemPrompt,
+                },
+              ],
+            },
+          ],
         }),
       }
     );
 
-    clearTimeout(timeout);
-
-    const data = await res.json();
-
-    let reply = "No response from AI";
-
-    //  Handle ALL HuggingFace response shapes
-    if (Array.isArray(data) && data.length > 0) {
-      reply = data[0]?.generated_text || reply;
-    } else if (data?.generated_text) {
-      reply = data.generated_text;
-    } else if (data?.error) {
-      reply = "AI is busy. Try again in few seconds.";
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API Error:", errorData);
+      throw new Error("Failed to get response from Gemini");
     }
 
-    //  Remove prompt echo if model repeats input
-    if (reply.startsWith(body.message)) {
-      reply = reply.slice(body.message.length).trim();
-    }
+    const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
 
-    return NextResponse.json({ reply });
-  } catch (err: any) {
-    if (err.name === "AbortError") {
-      return NextResponse.json(
-        { reply: "AI took too long. Try again." },
-        { status: 504 }
-      );
-    }
-
-    console.error("HF AI error:", err);
+    return NextResponse.json({
+      response: text,
+      success: true,
+    });
+  } catch (error: unknown) {
+    console.error("Error:", error);
     return NextResponse.json(
-      { reply: "AI failed. Try again later." },
+      {
+        error: "Failed to generate response",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

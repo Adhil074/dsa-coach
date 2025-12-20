@@ -1,4 +1,3 @@
-// app/roadmap/page.tsx
 "use client";
 
 import React, { JSX } from "react";
@@ -72,75 +71,50 @@ export default function RoadmapPage(): JSX.Element {
   }
 
   return (
-    <main
-      style={{
-        padding: 20,
-        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-        color: "#e6e6e6",
-        background: "#0b0b0b",
-        minHeight: "100vh",
-      }}
-    >
-      <h1 style={{ margin: 0, marginBottom: 18 }}>Roadmap</h1>
-
-      {loading && <p>Loading roadmap...</p>}
-      {error && <p style={{ color: "salmon" }}>Error: {error}</p>}
-
-      {!loading && !error && items.length === 0 && <p>No roadmap items yet.</p>}
-
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
+      {" "}
+      <div className="flex items-center gap-4 mb-8">
+      <button
+        onClick={() => router.push("/dashboard")}
+        className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+      >
+        ← Back
+      </button>
+      </div>
+      <h1 className="text-2xl font-semibold mb-6">Roadmap</h1>
+      {loading && <p className="text-slate-400">Loading roadmap...</p>}
+      {error && <p className="text-red-400">Error: {error}</p>}
+      {!loading && !error && items.length === 0 && (
+        <p className="text-slate-400">No roadmap items yet.</p>
+      )}
       {!loading && !error && items.length > 0 && (
-        <div style={{ display: "grid", gap: 18 }}>
+        <div className="grid gap-5">
           {Array.from(grouped.entries()).map(([topic, list]) => (
             <section
               key={topic}
-              style={{
-                border: "1px solid rgba(255,255,255,0.06)",
-                padding: 14,
-                borderRadius: 8,
-              }}
+              className="border border-slate-800 rounded-xl p-4"
             >
-              <h2 style={{ margin: "0 0 8px 0", textTransform: "capitalize" }}>
-                {topic}
-              </h2>
-              <div style={{ display: "grid", gap: 10 }}>
+              <h2 className="text-xl font-semibold mb-3 capitalize">{topic}</h2>
+
+              <div className="grid gap-3">
                 {list.map((it) => (
                   <article
                     key={it.problemId}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: 12,
-                      background: "rgba(255,255,255,0.02)",
-                      borderRadius: 6,
-                    }}
+                    className="flex justify-between items-center bg-slate-900 rounded-lg p-4"
                   >
                     <div>
-                      <div style={{ fontWeight: 700 }}>
+                      <div className="font-bold">
                         {it.title ?? "Untitled problem"}
                       </div>
-                      <div
-                        style={{
-                          marginTop: 6,
-                          fontSize: 13,
-                          color: "rgba(255,255,255,0.75)",
-                        }}
-                      >
+                      <div className="mt-1 text-sm text-slate-400">
                         Topic: {it.topic} • Difficulty: {it.difficulty ?? "—"}
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => openProblem(it.problemId)}
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: 6,
-                          border: "1px solid rgba(255,255,255,0.06)",
-                          background: "#111",
-                          color: "#fff",
-                          cursor: "pointer",
-                        }}
+                        className="px-3 py-2 rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-700"
                       >
                         Open
                       </button>

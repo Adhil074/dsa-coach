@@ -126,6 +126,14 @@ export default function ProgressPage() {
   return (
     <main className="p-6">
       <header className="mb-6">
+        <div className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            ← Back
+          </button>
+        </div>
         <h1 className="text-3xl font-bold">Your Progress</h1>
         <p className="text-sm text-muted-foreground">
           Overview of your attempts, failures, and struggled areas.
@@ -221,7 +229,7 @@ export default function ProgressPage() {
                           className="px-2 py-1 bg-red-700 rounded text-sm"
                           title={`Incorrect: ${p.incorrectCount}, Suboptimal: ${p.suboptimalCount}`}
                         >
-                          {p.title} 
+                          {p.title}
                         </button>
                       ))}
                     </div>
