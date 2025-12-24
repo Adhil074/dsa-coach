@@ -47,10 +47,11 @@ const seedList = [
     difficulty: "medium",
     optimalTime: "O(n)",
     optimalSpace: "O(n)",
-    description:
-      "Find a contiguous subarray that sums to target and return its start and end indices.",
+    description: `Find the leftmost (earliest starting index) contiguous subarray whose sum equals the target.
+If multiple subarrays exist, return the one with the smallest starting index.
+If no such subarray exists, return an empty array.`,
     examples: [
-      { input: "nums = [1,4,20,3,10,5], target = 33", output: "[2,4]" },
+      { input: "nums = [5,1,2,3,1], target = 9", output: "[1,4]" },
       { input: "nums = [10,2,-2,-20,10], target = -10", output: "[0,3]" },
     ],
     testCases: [
