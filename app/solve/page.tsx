@@ -253,6 +253,10 @@ export default function SolvePage(): JSX.Element {
   //generate problem (server generator)
 
   async function handleGenerate(e?: React.FormEvent) {
+    if (!topic || !difficulty || !language) {
+      setGenError("Please select topic, difficulty, and language");
+      return;
+    }
     if (e) e.preventDefault();
     setIsGenerating(true);
     setGenError(null);
@@ -480,9 +484,12 @@ export default function SolvePage(): JSX.Element {
             <label className="text-sm mb-1">Topic</label>
             <select
               className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
-              value={topic}
+              value={topic ?? ""}
               onChange={(e) => setTopic(e.target.value)}
             >
+              <option value="" disabled>
+                Select topic
+              </option>
               <option value="arrays">Arrays</option>
               <option value="strings">Strings</option>
               <option value="graphs">Graphs</option>
@@ -495,9 +502,12 @@ export default function SolvePage(): JSX.Element {
             <label className="text-sm mb-1">Difficulty</label>
             <select
               className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
-              value={difficulty}
+              value={difficulty ?? ""}
               onChange={(e) => setDifficulty(e.target.value)}
             >
+              <option value="" disabled>
+                Select difficulty
+              </option>
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
               <option value="hard">Hard</option>
@@ -508,9 +518,12 @@ export default function SolvePage(): JSX.Element {
             <label className="text-sm mb-1">Language</label>
             <select
               className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
-              value={language}
+              value={language ?? ""}
               onChange={(e) => setLanguage(e.target.value)}
             >
+              <option value="" disabled>
+                Select language
+              </option>
               <option value="javascript">JavaScript</option>
               <option value="python">Python</option>
               <option value="java">Java</option>
@@ -520,7 +533,7 @@ export default function SolvePage(): JSX.Element {
 
           <button
             type="submit"
-            disabled={isGenerating}
+            disabled={isGenerating||!topic||!difficulty||!language}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded px-4 py-2"
           >
             {isGenerating ? "Generating..." : "Generate Problem"}
