@@ -103,18 +103,18 @@ What would you like help with today?`,
   return (
     <div className="min-h-screen bg-slate-950 py-10 px-4">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
-        {/* Header */}
-        <header>
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              ← Back
-            </button>
+        <header className="relative mb-8">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            ← Back
+          </button>
+
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-white mb-2">AI Assistant</h1>
+            <p className="text-slate-300">Your personal AI-powered DSA coach</p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">AI Assistant</h1>
-          <p className="text-slate-300">Your personal AI-powered DSA coach</p>
         </header>
 
         {/* Chat area */}

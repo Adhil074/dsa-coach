@@ -15,7 +15,7 @@ type Problem = {
   examples: Example[];
   constraints?: string;
 
-  // ✅ REQUIRED for evaluation
+  //req for evaluation
   optimalTime?: string | null;
   optimalSpace?: string | null;
 
@@ -30,7 +30,7 @@ type SubmissionResult = {
   improvements?: string;
 };
 
-/* ---------- Store Type ---------- */
+//store type
 
 type ProblemStore = {
   // generation
@@ -65,7 +65,7 @@ type ProblemStore = {
   resetAll: () => void;
 };
 
-/* ---------- Initial State ---------- */
+//initial state
 
 const initialState = {
   topic: "",
@@ -80,7 +80,7 @@ const initialState = {
   submitError: null,
 };
 
-/* ---------- Store ---------- */
+//store
 
 export const useProblemStore = create<ProblemStore>((set) => ({
   ...initialState,

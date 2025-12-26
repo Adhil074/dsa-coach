@@ -17,6 +17,8 @@ interface GeneratedProblem {
   constraints?: string;
   hiddenTestsCount?: number;
   visibleTestsCount?: number;
+  optimalTime?: string; // ADDED
+  optimalSpace?: string; // ADDED
 }
 
 /**
@@ -36,6 +38,8 @@ function mockProblem(topic = "arrays", difficulty = "easy"): GeneratedProblem {
     constraints: "No constraints (placeholder).",
     hiddenTestsCount: 2,
     visibleTestsCount: 2,
+    optimalTime: "O(n)", // ADDED default
+    optimalSpace: "O(1)", // ADDED default
   };
 }
 
@@ -129,19 +133,8 @@ export async function POST(request: Request) {
     }
 
     // Save to MongoDB (so UI receives a real _id and examples/constraints)
-    // If the generatedProblem came from DB originally, it already has an _id in DB.
-    // But when it came from Gemini/mock we need to insert a new document.
     let savedProblem;
-    if (
-      generatedProblem &&
-      generatedProblem.id &&
-      generatedProblem.id.startsWith("dbdoc-")
-    ) {
-      // This branch won't usually run; kept for compatibility if you later
-      // add special id markers. For now we just create normally.
-    }
 
-    // Create slug and insert if not already in DB (if it was from DB we used that doc)
     // Attempt to find an existing problem with identical title+topic+difficulty to avoid duplicates
     const existing = await Problem.findOne({
       title: generatedProblem.title,
@@ -160,7 +153,6 @@ export async function POST(request: Request) {
         topic,
         difficulty,
         examples: generatedProblem.examples || [],
-        // We intentionally don't create full testCases here (skip heavy testcases)
         testCases: (generatedProblem.examples || []).map((ex) => ({
           input: ex.input,
           output: ex.output,
@@ -168,9 +160,12 @@ export async function POST(request: Request) {
         })),
         supportedLanguages: ["javascript", "python", "java", "cpp"],
         generatedByAI: useGemini,
+        optimalTime: generatedProblem.optimalTime || "O(n)", // ADDED
+        optimalSpace: generatedProblem.optimalSpace || "O(1)", // ADDED
       });
     }
 
+    // CRITICAL FIX: Return optimalTime and optimalSpace to frontend!
     return NextResponse.json({
       problem: {
         id: String(savedProblem._id),
@@ -181,6 +176,10 @@ export async function POST(request: Request) {
         constraints: generatedProblem.constraints,
         visibleTestsCount: generatedProblem.visibleTestsCount ?? 2,
         hiddenTestsCount: generatedProblem.hiddenTestsCount ?? 2,
+        optimalTime: savedProblem.optimalTime, // ADDED ✅
+        optimalSpace: savedProblem.optimalSpace, // ADDED ✅
+        topic: savedProblem.topic, // ADDED (helpful)
+        difficulty: savedProblem.difficulty, // ADDED (helpful)
       },
     });
   } catch (err) {
@@ -202,6 +201,8 @@ function docToGeneratedProblem(doc: any): GeneratedProblem {
     constraints: doc.constraints ?? undefined,
     hiddenTestsCount: doc.hiddenTestsCount ?? 2,
     visibleTestsCount: doc.visibleTestsCount ?? 2,
+    optimalTime: doc.optimalTime ?? "O(n)", // ADDED ✅
+    optimalSpace: doc.optimalSpace ?? "O(1)", // ADDED ✅
   };
 }
 
@@ -217,12 +218,17 @@ Return ONLY a valid JSON object (no extra text) with these keys:
   "examples": [{"input": "example input", "output": "expected output"}],
   "constraints": "constraints string",
   "visibleTestsCount": 2,
-  "hiddenTestsCount": 2
-}`;
+  "hiddenTestsCount": 2,
+  "optimalTime": "O(n)",
+  "optimalSpace": "O(1)"
+}
+
+Use valid Big O notation for optimalTime: "O(1)", "O(log n)", "O(n)", "O(n log n)", or "O(n^2)".
+Use valid Big O notation for optimalSpace: "O(1)" or "O(n)".`;
 
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
-    const model = "gemini-2.0-flash";
+    const model = "gemini-2.0-flash-exp";
 
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -266,6 +272,8 @@ Return ONLY a valid JSON object (no extra text) with these keys:
         const parsed = JSON.parse(jsonMatch[0]);
         return {
           id: `${topic}-${difficulty}-gemini-${Date.now()}`,
+          optimalTime: parsed.optimalTime || "O(n)", // ADDED default
+          optimalSpace: parsed.optimalSpace || "O(1)", // ADDED default
           ...parsed,
         };
       } catch (e) {

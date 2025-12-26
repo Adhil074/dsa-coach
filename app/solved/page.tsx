@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-
 import { useRouter } from "next/navigation";
 
 type SolvedItem = {
@@ -20,7 +19,7 @@ export default function SolvedPage() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<SolvedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const router=useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     async function loadSolved() {
@@ -51,15 +50,16 @@ export default function SolvedPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
       {" "}
-      <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            ← Back
-          </button>
-        </div>
-      <h1 className="text-3xl font-bold mb-6">Solved Problems</h1>
+      <div className="relative mb-8 flex items-center justify-center">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+        >
+          ← Back
+        </button>
+
+        <h1 className="text-3xl font-bold">Solved Problems</h1>
+      </div>
       {items.length === 0 && (
         <p className="text-slate-400">No problems solved yet.</p>
       )}

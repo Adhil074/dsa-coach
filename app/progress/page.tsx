@@ -126,33 +126,35 @@ export default function ProgressPage() {
   return (
     <main className="p-6">
       <header className="mb-6">
-        <div className="flex items-center gap-4 mb-8">
+        <div className="relative flex items-center justify-center mb-2">
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+            className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
           >
             ← Back
           </button>
+
+          <h1 className="text-3xl font-bold text-center">Your Progress</h1>
         </div>
-        <h1 className="text-3xl font-bold">Your Progress</h1>
-        <p className="text-sm text-muted-foreground">
+
+        <p className="text-sm text-slate-400 text-center">
           Overview of your attempts, failures, and struggled areas.
         </p>
       </header>
 
       {/* Top stats */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="p-4 rounded bg-slate-900">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 mb-6">
+        <div className="p-4 rounded bg-slate-900 flex flex-col items-center justify-center text-center">
           <h3 className="text-lg font-semibold">Total Solved</h3>
           <div className="text-2xl mt-2">{summary.totalSolved}</div>
         </div>
 
-        <div className="p-4 rounded bg-slate-900">
+        <div className="p-4 rounded bg-slate-900 flex flex-col items-center justify-center text-center">
           <h3 className="text-lg font-semibold">Total Attempts</h3>
           <div className="text-2xl mt-2">{summary.totalAttempts}</div>
         </div>
 
-        <div className="p-4 rounded bg-slate-900">
+        <div className="p-4 rounded bg-slate-900 flex flex-col items-center justify-center text-center">
           <h3 className="text-lg font-semibold">Failed Attempts</h3>
           <div className="text-2xl mt-2">{summary.failedAttempts}</div>
         </div>

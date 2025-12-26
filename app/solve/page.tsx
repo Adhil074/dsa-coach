@@ -1,9 +1,12 @@
+//app\solve\page.tsx
+
 "use client";
 
 import React, { JSX } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProblemStore } from "@/store/useProblemStore";
 import Editor from "@monaco-editor/react";
+import { log } from "console";
 
 //Strict domain types
 
@@ -416,19 +419,22 @@ export default function SolvePage(): JSX.Element {
           problemId: localProblem.id,
           code: localCode,
           language,
-          solved: solvedByAI,
+          // solved: solvedByAI,
+          verdict:aiJson.verdict,
         }),
       });
 
       if (!saveResp.ok) {
         const txt = await saveResp.text();
-        setSubmitError("Save error: " + txt);
+        // setSubmitError("Save error: " + txt);
+        console.error("Save error:",txt);
       }
 
       //4) update UI from AI
       setSubmissionResult({
         isCorrect: solvedByAI,
         isOptimal: aiJson.verdict === "correct_optimal",
+
         feedback: aiJson.message,
         improvements: aiJson.hint,
       });
@@ -442,7 +448,7 @@ export default function SolvePage(): JSX.Element {
       );
     } catch (err) {
       console.error("Submit error:", err);
-      setSubmitError("Submit error");
+      setSubmitError("Submit error:"+(err instanceof Error?err.message:String(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -459,20 +465,23 @@ export default function SolvePage(): JSX.Element {
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
       {" "}
       <header className="mb-8">
-        {" "}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="relative flex items-center justify-center">
+          {/* Back button - left */}
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+            className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
           >
             ← Back
           </button>
+
+          {/* Centered title */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">DSA Problem Solver</h1>
+            <p className="text-slate-400 mt-1">
+              Generate, solve, and learn from optimal solutions
+            </p>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold">DSA Problem Solver</h1>{" "}
-        <p className="text-slate-400 mt-1">
-          {" "}
-          Generate, solve, and learn from optimal solutions{" "}
-        </p>{" "}
       </header>
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-4">Generate Problem</h2>
@@ -533,7 +542,7 @@ export default function SolvePage(): JSX.Element {
 
           <button
             type="submit"
-            disabled={isGenerating||!topic||!difficulty||!language}
+            disabled={isGenerating || !topic || !difficulty || !language}
             className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded px-4 py-2"
           >
             {isGenerating ? "Generating..." : "Generate Problem"}

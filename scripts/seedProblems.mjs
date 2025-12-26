@@ -1,3 +1,5 @@
+//scripts\seedProblems.mjs
+
 import mongoose from "mongoose";
 
 const MONGO_URI =
@@ -7,9 +9,7 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-//
 // REAL EXAMPLES + CONSTRAINTS FOR ALL 15 PROBLEMS
-//
 
 const seedList = [
   // ARRAYS

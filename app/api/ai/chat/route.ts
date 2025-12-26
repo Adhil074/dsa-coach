@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 🔥 Single strong system prompt for DSA Coach
+    
     let systemPrompt = `
 You are an expert DSA coach for coding interviews.
 
@@ -52,7 +52,7 @@ ${contextStr}
 ${systemPrompt}`;
     }
 
-    // Gemini API call (unchanged)
+    // Gemini API call 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {

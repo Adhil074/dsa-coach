@@ -1,4 +1,4 @@
-// app/api/problems/run/route.ts
+
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -45,7 +45,7 @@ function parseArgNamesFromInput(input: string): string[] {
   return names;
 }
 
-/** Find a usable function name in the VM context */
+
 
 // keep `import vm from "vm"` at top
 const findUserFunctionName = (context: vm.Context): string | null => {
