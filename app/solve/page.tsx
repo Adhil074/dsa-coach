@@ -420,14 +420,14 @@ export default function SolvePage(): JSX.Element {
           code: localCode,
           language,
           // solved: solvedByAI,
-          verdict:aiJson.verdict,
+          verdict: aiJson.verdict,
         }),
       });
 
       if (!saveResp.ok) {
         const txt = await saveResp.text();
         // setSubmitError("Save error: " + txt);
-        console.error("Save error:",txt);
+        console.error("Save error:", txt);
       }
 
       //4) update UI from AI
@@ -448,7 +448,9 @@ export default function SolvePage(): JSX.Element {
       );
     } catch (err) {
       console.error("Submit error:", err);
-      setSubmitError("Submit error:"+(err instanceof Error?err.message:String(err)));
+      setSubmitError(
+        "Submit error:" + (err instanceof Error ? err.message : String(err))
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -642,6 +644,7 @@ export default function SolvePage(): JSX.Element {
                       contextmenu: true,
                     }}
                   />
+                  
 
                   <button
                     type="submit"

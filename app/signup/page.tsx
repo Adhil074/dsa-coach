@@ -8,6 +8,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword,setShowPassword]=useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -57,6 +58,7 @@ export default function SignupPage() {
             <label className="block text-sm mb-1 text-gray-300">Name</label>
             <input
               type="text"
+              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -67,6 +69,7 @@ export default function SignupPage() {
             <label className="block text-sm mb-1 text-gray-300">Email</label>
             <input
               type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -74,15 +77,62 @@ export default function SignupPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm mb-1 text-gray-300">Password</label>
+          
+          <div className="relative">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 pr-10 rounded bg-zinc-800 border border-zinc-700 focus:outline-none focus:border-indigo-500 transition"
             />
+
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-200"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label="Toggle password visibility"
+            >
+              {showPassword ? (
+                /* Eye off */
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-5-9-5a17.67 17.67 0 014.288-4.768M21 21l-6-6"
+                  />
+                </svg>
+              ) : (
+                /* Eye */
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.163.512-.37 1.014-.62 1.497"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
 
           {error && (

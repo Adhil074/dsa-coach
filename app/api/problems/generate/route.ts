@@ -38,8 +38,8 @@ function mockProblem(topic = "arrays", difficulty = "easy"): GeneratedProblem {
     constraints: "No constraints (placeholder).",
     hiddenTestsCount: 2,
     visibleTestsCount: 2,
-    optimalTime: "O(n)", // ADDED default
-    optimalSpace: "O(1)", // ADDED default
+    optimalTime: "O(n)", 
+    optimalSpace: "O(1)", 
   };
 }
 
@@ -176,10 +176,10 @@ export async function POST(request: Request) {
         constraints: generatedProblem.constraints,
         visibleTestsCount: generatedProblem.visibleTestsCount ?? 2,
         hiddenTestsCount: generatedProblem.hiddenTestsCount ?? 2,
-        optimalTime: savedProblem.optimalTime, // ADDED ✅
-        optimalSpace: savedProblem.optimalSpace, // ADDED ✅
-        topic: savedProblem.topic, // ADDED (helpful)
-        difficulty: savedProblem.difficulty, // ADDED (helpful)
+        optimalTime: savedProblem.optimalTime, 
+        optimalSpace: savedProblem.optimalSpace, 
+        topic: savedProblem.topic, 
+        difficulty: savedProblem.difficulty, 
       },
     });
   } catch (err) {
@@ -201,8 +201,8 @@ function docToGeneratedProblem(doc: any): GeneratedProblem {
     constraints: doc.constraints ?? undefined,
     hiddenTestsCount: doc.hiddenTestsCount ?? 2,
     visibleTestsCount: doc.visibleTestsCount ?? 2,
-    optimalTime: doc.optimalTime ?? "O(n)", // ADDED ✅
-    optimalSpace: doc.optimalSpace ?? "O(1)", // ADDED ✅
+    optimalTime: doc.optimalTime ?? "O(n)", 
+    optimalSpace: doc.optimalSpace ?? "O(1)", 
   };
 }
 
@@ -228,7 +228,7 @@ Use valid Big O notation for optimalSpace: "O(1)" or "O(n)".`;
 
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
-    const model = "gemini-2.0-flash-exp";
+    const model = "gemini-2.5-flash";
 
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -272,8 +272,8 @@ Use valid Big O notation for optimalSpace: "O(1)" or "O(n)".`;
         const parsed = JSON.parse(jsonMatch[0]);
         return {
           id: `${topic}-${difficulty}-gemini-${Date.now()}`,
-          optimalTime: parsed.optimalTime || "O(n)", // ADDED default
-          optimalSpace: parsed.optimalSpace || "O(1)", // ADDED default
+          optimalTime: parsed.optimalTime || "O(n)", 
+          optimalSpace: parsed.optimalSpace || "O(1)", 
           ...parsed,
         };
       } catch (e) {
