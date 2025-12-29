@@ -1,4 +1,3 @@
-
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -58,7 +57,11 @@ function buildHintsFromRunner(runner?: HintRequest["runner"]): string[] {
   if (firstFail && typeof firstFail.actual !== "undefined") {
     // simple heuristic: if expected looks like JSON array/number/boolean try to suggest return type check
     const exp = String(firstFail.expected ?? "");
-    if (/^\[.*\]$/.test(exp) || /^\d+$/.test(exp) || /^true|false$/i.test(exp)) {
+    if (
+      /^\[.*\]$/.test(exp) ||
+      /^\d+$/.test(exp) ||
+      /^true|false$/i.test(exp)
+    ) {
       hints.push(
         "Output mismatch — confirm your function returns the right structure (array vs string vs number)."
       );
@@ -81,8 +84,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       hints,
-      note:
-        "This endpoint currently uses simple heuristics. Replace with LLM later for richer suggestions.",
+      note: "This endpoint currently uses simple heuristics. Replace with LLM later for richer suggestions.",
     });
   } catch (err) {
     console.error("Hints error:", err);

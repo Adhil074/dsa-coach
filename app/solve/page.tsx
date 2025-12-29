@@ -1,5 +1,3 @@
-//app\solve\page.tsx
-
 "use client";
 
 import React, { JSX } from "react";
@@ -644,7 +642,6 @@ export default function SolvePage(): JSX.Element {
                       contextmenu: true,
                     }}
                   />
-                  
 
                   <button
                     type="submit"

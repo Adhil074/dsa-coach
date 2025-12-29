@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -20,7 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    
     let systemPrompt = `
 You are an expert DSA coach for coding interviews.
 
@@ -37,7 +35,7 @@ User question:
 ${message}
 `;
 
-    // Preserve conversation context (unchanged logic)
+    // preserving conversation context
     if (context && context.length > 0) {
       const contextStr = context
         .map(
@@ -52,7 +50,7 @@ ${contextStr}
 ${systemPrompt}`;
     }
 
-    // Gemini API call 
+    // Gemini API call
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {

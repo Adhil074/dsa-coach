@@ -1,5 +1,3 @@
-//scripts\seedProblems.mjs
-
 import mongoose from "mongoose";
 
 const MONGO_URI =
@@ -408,9 +406,7 @@ If no such subarray exists, return an empty array.`,
   },
 ];
 
-//
 // Build final docs
-//
 
 const docs = seedList.map((p, i) => ({
   title: `${p.title} (${p.difficulty})`,
@@ -429,9 +425,8 @@ const docs = seedList.map((p, i) => ({
   updatedAt: new Date(),
 }));
 
-//
 // Seeder
-//
+
 async function seed() {
   try {
     await mongoose.connect(MONGO_URI, {

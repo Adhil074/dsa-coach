@@ -1,4 +1,3 @@
-// dsa-coach/store/useProblemStore.ts
 import { create } from "zustand";
 
 //types

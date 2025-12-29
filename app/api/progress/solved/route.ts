@@ -1,50 +1,117 @@
-
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { connectToDatabase, getCollections } from "../../../../../lib/db"; 
+import { connectToDatabase } from "../../../../../lib/db";
 import { User } from "../../../../../lib/models/user";
 import { Progress } from "../../../../../lib/models/progress";
+import { Types } from "mongoose";
 
-export async function GET(request: Request) {
+// Type for JWT token from NextAuth
+interface AuthToken {
+  email?: string;
+  sub?: string;
+  [key: string]: unknown;
+}
+
+// Type for User document from database
+interface UserDoc {
+  _id: Types.ObjectId;
+  email: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+// Flexible type for Progress document from database (Mongoose lean returns flexible types)
+interface ProgressDoc {
+  _id?: Types.ObjectId | number;
+  userId?: Types.ObjectId | number;
+  problemId?:
+    | Types.ObjectId
+    | number
+    | { _id?: Types.ObjectId | number }
+    | null;
+  title?: string;
+  topic?: string;
+  difficulty?: string;
+  status?: string;
+  lastCode?: string;
+  solvedAt?: Date | null;
+  updatedAt?: Date | null;
+  [key: string]: unknown;
+}
+
+// Type for the response sent to client
+interface SolvedProblemResponse {
+  problemId: string;
+  title: string | null;
+  topic: string | null;
+  difficulty: string | null;
+  solvedAt: Date | null;
+  lastCodeSnippet: string | null;
+}
+
+export async function GET(request: NextRequest) {
   try {
     // 1) auth: getToken from request (uses NEXTAUTH secret)
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    if (!token || !(token as any).email) {
+    const token = (await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })) as AuthToken | null;
+
+    if (!token || !token.email) {
       return NextResponse.json([], { status: 200 }); // return empty array for unauthenticated
     }
-    const email = String((token as any).email);
+    const email = String(token.email);
 
     // 2) connect DB
     await connectToDatabase();
 
     // 3) find user doc by email
-    const user = await User.findOne({ email }).lean();
+    const user = (await User.findOne({ email }).lean()) as UserDoc | null;
     if (!user) {
       return NextResponse.json([], { status: 200 });
     }
 
     // 4) query progresses collection for this user where status is 'solved'
-    const solvedProgresses = await Progress.find({
+    const solvedProgressesRaw = await Progress.find({
       userId: user._id,
       status: "solved",
     })
       .sort({ solvedAt: -1, updatedAt: -1 })
       .lean();
 
+    // Cast to our flexible type
+    const solvedProgresses = solvedProgressesRaw as unknown as ProgressDoc[];
+
     // 5) map to minimal shape the client expects
-    const results = solvedProgresses.map((p) => ({
-      problemId: String((p as any).problemId?._id ?? (p as any).problemId ?? ""),
-      title: (p as any).title ?? null,
-      topic: (p as any).topic ?? null,
-      difficulty: (p as any).difficulty ?? null,
-      solvedAt: (p as any).solvedAt ?? (p as any).updatedAt ?? null,
-      lastCodeSnippet:
-        typeof (p as any).lastCode === "string"
-          ? ((p as any).lastCode as string).slice(0, 800)
-          : null,
-    }));
+    const results: SolvedProblemResponse[] = solvedProgresses.map((p) => {
+      // Extract problemId - handle both direct ObjectId and populated case
+      let problemId = "";
+      if (p.problemId) {
+        if (
+          typeof p.problemId === "object" &&
+          p.problemId !== null &&
+          "_id" in p.problemId
+        ) {
+          const populated = p.problemId as { _id?: Types.ObjectId | number };
+          problemId = populated._id ? String(populated._id) : "";
+        } else {
+          problemId = String(p.problemId);
+        }
+      }
+
+      return {
+        problemId,
+        title: p.title ?? null,
+        topic: p.topic ?? null,
+        difficulty: p.difficulty ?? null,
+        solvedAt: p.solvedAt ?? p.updatedAt ?? null,
+        lastCodeSnippet:
+          typeof p.lastCode === "string" ? p.lastCode.slice(0, 800) : null,
+      };
+    });
 
     return NextResponse.json(results);
   } catch (err) {
@@ -52,92 +119,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
-// export const runtime = "nodejs";
-
-// import { NextResponse } from "next/server";
-// import { getToken } from "next-auth/jwt";
-// import { connectToDatabase } from "../../../../../lib/db";
-// import { User } from "../../../../../lib/models/user";
-// import { Progress } from "../../../../../lib/models/progress";
-// import { Types } from "mongoose";
-
-// ///types
-
-// type AuthToken = {
-//   email?: string | null;
-// };
-
-// type LeanProgress = {
-//   problemId?: Types.ObjectId | { _id?: Types.ObjectId } | string;
-//   title?: string;
-//   topic?: string;
-//   difficulty?: string;
-//   solvedAt?: Date;
-//   updatedAt?: Date;
-//   lastCode?: string;
-// };
-
-// //route
-
-// export async function GET(request: Request) {
-//   try {
-//     // 1) Auth
-//     const token = (await getToken({
-//       req: request,
-//       secret: process.env.NEXTAUTH_SECRET,
-//     })) as AuthToken | null;
-
-//     if (!token?.email) {
-//       return NextResponse.json([], { status: 200 });
-//     }
-
-//     const email = token.email;
-
-//     // 2) DB connect
-//     await connectToDatabase();
-
-//     // 3) find User by mail
-//     const user = await User.findOne({ email }).lean<{ _id: Types.ObjectId }>();
-//     if (!user) {
-//       return NextResponse.json([], { status: 200 });
-//     }
-
-//     // 4) Progress
-//     const solvedProgresses = await Progress.find({
-//       userId: user._id,
-//       status: "solved",
-//     })
-//       .sort({ solvedAt: -1, updatedAt: -1 })
-//       .lean<LeanProgress[]>();
-
-//     // 5) response mapping
-//     const results = solvedProgresses.map((p) => {
-//       const problemId =
-//         typeof p.problemId === "string"
-//           ? p.problemId
-//           : p.problemId instanceof Types.ObjectId
-//           ? p.problemId.toString()
-//           : p.problemId?._id instanceof Types.ObjectId
-//           ? p.problemId._id.toString()
-//           : "";
-
-//       return {
-//         problemId,
-//         title: p.title ?? null,
-//         topic: p.topic ?? null,
-//         difficulty: p.difficulty ?? null,
-//         solvedAt: p.solvedAt ?? p.updatedAt ?? null,
-//         lastCodeSnippet:
-//           typeof p.lastCode === "string"
-//             ? p.lastCode.slice(0, 800)
-//             : null,
-//       };
-//     });
-
-//     return NextResponse.json(results);
-//   } catch (err) {
-//     console.error("GET /api/progress/solved error:", err);
-//     return NextResponse.json({ error: "Server error" }, { status: 500 });
-//   }
-// }

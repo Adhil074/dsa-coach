@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { connectToDatabase } from "../../../../lib/db";
 import { Problem } from "../../../../lib/models/problem";
@@ -41,7 +42,7 @@ async function fetchProblem(
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 

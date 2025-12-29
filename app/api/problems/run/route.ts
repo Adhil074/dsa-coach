@@ -1,4 +1,3 @@
-
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -31,7 +30,7 @@ type ProblemDoc = {
   difficulty?: string;
 };
 
-/** Naive parser to extract variable names from "a=1;b=[1,2];" style strings */
+// Naive parser to extract variable names from "a=1;b=[1,2];" style strings */
 function parseArgNamesFromInput(input: string): string[] {
   const parts = input
     .split(";")
@@ -44,8 +43,6 @@ function parseArgNamesFromInput(input: string): string[] {
   }
   return names;
 }
-
-
 
 // keep `import vm from "vm"` at top
 const findUserFunctionName = (context: vm.Context): string | null => {

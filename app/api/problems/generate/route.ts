@@ -17,14 +17,10 @@ interface GeneratedProblem {
   constraints?: string;
   hiddenTestsCount?: number;
   visibleTestsCount?: number;
-  optimalTime?: string; // ADDED
-  optimalSpace?: string; // ADDED
+  optimalTime?: string;
+  optimalSpace?: string;
 }
 
-/**
- * Small generic mock generator used only as the last fallback.
- * This no longer returns the two-sum static content for all topics.
- */
 function mockProblem(topic = "arrays", difficulty = "easy"): GeneratedProblem {
   const title = `${capitalize(topic)} Example Problem (${difficulty})`;
   return {
@@ -38,8 +34,8 @@ function mockProblem(topic = "arrays", difficulty = "easy"): GeneratedProblem {
     constraints: "No constraints (placeholder).",
     hiddenTestsCount: 2,
     visibleTestsCount: 2,
-    optimalTime: "O(n)", 
-    optimalSpace: "O(1)", 
+    optimalTime: "O(n)",
+    optimalSpace: "O(1)",
   };
 }
 
@@ -160,12 +156,12 @@ export async function POST(request: Request) {
         })),
         supportedLanguages: ["javascript", "python", "java", "cpp"],
         generatedByAI: useGemini,
-        optimalTime: generatedProblem.optimalTime || "O(n)", // ADDED
-        optimalSpace: generatedProblem.optimalSpace || "O(1)", // ADDED
+        optimalTime: generatedProblem.optimalTime || "O(n)",
+        optimalSpace: generatedProblem.optimalSpace || "O(1)",
       });
     }
 
-    // CRITICAL FIX: Return optimalTime and optimalSpace to frontend!
+    //  Return optimalTime and optimalSpace to frontend!
     return NextResponse.json({
       problem: {
         id: String(savedProblem._id),
@@ -176,10 +172,10 @@ export async function POST(request: Request) {
         constraints: generatedProblem.constraints,
         visibleTestsCount: generatedProblem.visibleTestsCount ?? 2,
         hiddenTestsCount: generatedProblem.hiddenTestsCount ?? 2,
-        optimalTime: savedProblem.optimalTime, 
-        optimalSpace: savedProblem.optimalSpace, 
-        topic: savedProblem.topic, 
-        difficulty: savedProblem.difficulty, 
+        optimalTime: savedProblem.optimalTime,
+        optimalSpace: savedProblem.optimalSpace,
+        topic: savedProblem.topic,
+        difficulty: savedProblem.difficulty,
       },
     });
   } catch (err) {
@@ -190,9 +186,20 @@ export async function POST(request: Request) {
     );
   }
 }
-
-/** Convert a DB doc (mongoose) to our GeneratedProblem shape */
-function docToGeneratedProblem(doc: any): GeneratedProblem {
+interface DbProblemDoc {
+  _id: string; // MongoDB IDs are strings when fetched
+  title?: string;
+  topic?: string;
+  description?: string;
+  examples?: { input: string; output: string }[];
+  constraints?: string; // Assume string; adjust if array/object
+  hiddenTestsCount?: number;
+  visibleTestsCount?: number;
+  optimalTime?: string;
+  optimalSpace?: string;
+}
+// Convert a DB doc (mongoose) to our GeneratedProblem shape
+function docToGeneratedProblem(doc: DbProblemDoc): GeneratedProblem {
   return {
     id: String(doc._id),
     title: doc.title ?? `Untitled (${doc.topic ?? "unknown"})`,
@@ -201,8 +208,8 @@ function docToGeneratedProblem(doc: any): GeneratedProblem {
     constraints: doc.constraints ?? undefined,
     hiddenTestsCount: doc.hiddenTestsCount ?? 2,
     visibleTestsCount: doc.visibleTestsCount ?? 2,
-    optimalTime: doc.optimalTime ?? "O(n)", 
-    optimalSpace: doc.optimalSpace ?? "O(1)", 
+    optimalTime: doc.optimalTime ?? "O(n)",
+    optimalSpace: doc.optimalSpace ?? "O(1)",
   };
 }
 
@@ -272,8 +279,8 @@ Use valid Big O notation for optimalSpace: "O(1)" or "O(n)".`;
         const parsed = JSON.parse(jsonMatch[0]);
         return {
           id: `${topic}-${difficulty}-gemini-${Date.now()}`,
-          optimalTime: parsed.optimalTime || "O(n)", 
-          optimalSpace: parsed.optimalSpace || "O(1)", 
+          optimalTime: parsed.optimalTime || "O(n)",
+          optimalSpace: parsed.optimalSpace || "O(1)",
           ...parsed,
         };
       } catch (e) {

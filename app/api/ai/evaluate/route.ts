@@ -1,103 +1,3 @@
-// //app\api\ai\evaluate\route.ts
-// import { NextResponse } from "next/server";
-
-// //types
-
-// type BigO = "O(1)" | "O(log n)" | "O(n)" | "O(n log n)" | "O(n^2)";
-
-// type ProblemSummary = {
-//   title: string | null;
-//   description: string | null;
-//   difficulty: string | null;
-//   optimalTime: BigO | null;
-// };
-
-// type EvaluateRequest = {
-//   problem: ProblemSummary;
-//   code: string;
-//   runner: {
-//     passedCount: number;
-//     total: number;
-//   };
-// };
-
-// type Verdict = "correct_optimal" | "correct_suboptimal" | "incorrect";
-
-// //classifier
-// function classifyTimeComplexity(code: string): BigO {
-//   const normalized = code.replace(/\s+/g, " ").toLowerCase();
-
-//   const loopCount =
-//     (normalized.match(/\bfor\s*\(/g)?.length ?? 0) +
-//     (normalized.match(/\bwhile\s*\(/g)?.length ?? 0);
-
-//   // 2 or more loops → assume O(n^2)
-//   if (loopCount >= 2) return "O(n^2)";
-
-//   // Hash-based linear scan
-//   if (
-//     normalized.includes("new map") ||
-//     normalized.includes("map(") ||
-//     normalized.includes("object") ||
-//     normalized.includes("{}")
-//   ) {
-//     return "O(n)";
-//   }
-
-//   // Single loop
-//   if (loopCount === 1) return "O(n)";
-
-//   return "O(1)";
-// }
-
-// //post
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = (await req.json()) as EvaluateRequest;
-
-//     const isCorrect =
-//       body.runner.total > 0 && body.runner.passedCount === body.runner.total;
-
-//     let verdict: Verdict;
-
-//     if (!isCorrect) {
-//       verdict = "incorrect";
-//     } else {
-//       const detected = classifyTimeComplexity(body.code);
-
-//       verdict =
-//         body.problem.optimalTime && detected === body.problem.optimalTime
-//           ? "correct_optimal"
-//           : "correct_suboptimal";
-//     }
-
-//     return NextResponse.json({
-//       success: true,
-//       verdict,
-//       message:
-//         verdict === "correct_optimal"
-//           ? "Your solution is correct and optimal."
-//           : verdict === "correct_suboptimal"
-//           ? "Your solution is correct but can be optimized."
-//           : "Your solution is incorrect.",
-//       hint:
-//         verdict === "correct_suboptimal"
-//           ? "Try a more efficient approach."
-//           : verdict === "incorrect"
-//           ? "Check logic and edge cases."
-//           : undefined,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return NextResponse.json(
-//       { success: false, message: "Evaluation failed" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
 import { NextResponse } from "next/server";
 
 //types
@@ -121,7 +21,7 @@ type EvaluateRequest = {
 
 type Verdict = "correct_optimal" | "correct_suboptimal" | "incorrect";
 
-//IMPROVED classifier
+//classifier
 function classifyTimeComplexity(code: string): BigO {
   // Remove comments and strings to avoid false positives
   const cleaned = code
@@ -133,7 +33,7 @@ function classifyTimeComplexity(code: string): BigO {
 
   const normalized = cleaned.replace(/\s+/g, " ").toLowerCase();
 
-  // Check for nested loops (loops inside loops) - TRUE O(n^2)
+  // Check for nested loops (
   const nestedLoopPattern =
     /\b(for|while)\s*\([^)]*\)\s*\{[^}]*\b(for|while)\s*\(/gi;
 
@@ -184,7 +84,15 @@ function classifyTimeComplexity(code: string): BigO {
   }
 
   // Array methods that iterate (but not nested)
-  const arrayMethods = [".map(", ".filter(", ".reduce(", ".foreach(", ".find(", ".some(", ".every("];
+  const arrayMethods = [
+    ".map(",
+    ".filter(",
+    ".reduce(",
+    ".foreach(",
+    ".find(",
+    ".some(",
+    ".every(",
+  ];
   const hasArrayMethod = arrayMethods.some((method) =>
     normalized.includes(method)
   );
@@ -215,13 +123,13 @@ export async function POST(req: Request) {
     if (!isCorrect) {
       verdict = "incorrect";
     } else {
-      // CRITICAL FIX: Check if optimalTime is null/undefined
+      // Check if optimalTime is null/undefined
       if (!body.problem.optimalTime) {
         console.warn("⚠️ WARNING: Problem has no optimalTime defined!");
         console.warn("Problem:", body.problem.title);
-        
+
         // When no optimal time is defined, just mark as correct
-        // (This shouldn't happen, but gracefully handle it)
+
         verdict = "correct_optimal";
       } else {
         const detected = classifyTimeComplexity(body.code);
