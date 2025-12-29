@@ -8,7 +8,7 @@ import { Progress } from "../../../../../lib/models/progress";
 import { User } from "../../../../../lib/models/user";
 import { Submission } from "../../../../../lib/models/submission";
 import { getToken } from "next-auth/jwt";
-import { Types, Query } from "mongoose";
+import { Types } from "mongoose";
 
 // Local interfaces inferred from code usage (minimal, based on accessed fields – adjust if schemas differ)
 interface UserToken {
