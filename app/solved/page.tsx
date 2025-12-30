@@ -35,7 +35,7 @@ export default function SolvedPage() {
         // ensure array
         setItems(Array.isArray(data) ? data : []);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError("Something went wrong");
         setLoading(false);
       }

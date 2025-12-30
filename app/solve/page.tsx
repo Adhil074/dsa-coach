@@ -4,7 +4,7 @@ import React, { JSX } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useProblemStore } from "@/store/useProblemStore";
 import Editor from "@monaco-editor/react";
-import { log } from "console";
+import { Suspense } from "react";
 
 //Strict domain types
 
@@ -21,21 +21,6 @@ type TestCaseItem = {
 };
 
 type BigO = "O(1)" | "O(log n)" | "O(n)" | "O(n log n)" | "O(n^2)";
-
-type ParsedProblem = {
-  id: string;
-  title: string;
-  description: string;
-  examples: unknown[];
-  constraints?: string;
-  visibleTestsCount: number;
-  hiddenTestsCount: number;
-  testCases: unknown[];
-  optimalTime?: BigO;
-  optimalSpace?: BigO;
-  topic?: string;
-  difficulty?: string;
-};
 
 export type LocalProblem = {
   id: string;
@@ -72,6 +57,16 @@ function isNumber(v: unknown): v is number {
 function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
 }
+
+function SolvePageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-6 text-slate-400">Loading...</div>}>
+      <SolvePage />
+    </Suspense>
+  );
+}
+export default SolvePageWrapper;
+
 
 function parseExamples(value: unknown): ExampleItem[] {
   if (!Array.isArray(value)) return [];
@@ -161,7 +156,8 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
 }
 
 //component
-export default function SolvePage(): JSX.Element {
+
+ function SolvePage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
