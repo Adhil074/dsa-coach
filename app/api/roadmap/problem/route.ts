@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../../lib/db";
-import { Problem } from "../../../../../lib/models/problem";
+import { connectToDatabase } from "@/lib/db";
+import { Problem } from "@/lib/models/problem";
 import { Types } from "mongoose";
 
 export async function GET(req: Request) {

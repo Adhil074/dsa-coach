@@ -3,10 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { connectToDatabase } from "../../../../lib/db";
-import { Problem } from "../../../../lib/models/problem";
-import { Progress } from "../../../../lib/models/progress";
-import { User } from "../../../../lib/models/user";
+import { connectToDatabase } from "@/lib/db";
+import { Problem } from "@/lib/models/problem";
+import { Progress } from "@/lib/models/progress";
+import { User } from "@/lib/models/user";
 import { Types } from "mongoose";
 
 type Difficulty = "easy" | "medium" | "hard";

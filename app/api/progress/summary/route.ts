@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../../lib/db";
-import { Progress } from "../../../../../lib/models/progress";
+import { connectToDatabase } from "@/lib/db";
+import { Progress } from "@/lib/models/progress";
 
 interface TopicStats {
   solved: number;

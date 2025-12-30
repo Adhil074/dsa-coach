@@ -2,7 +2,7 @@
 
 import React, { JSX } from "react";
 import { useRouter } from "next/navigation";
-import { ROADMAP, RoadmapPhase } from "../../../lib/roadmapConfiig";
+import { ROADMAP, RoadmapPhase } from "@/lib/roadmapConfiig";
 
 type RoadmapItem = {
   problemId: string;

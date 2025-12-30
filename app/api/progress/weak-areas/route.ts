@@ -2,8 +2,8 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import { connectToDatabase } from "../../../../../lib/db";
-import { Submission } from "../../../../../lib/models/submission";
+import { connectToDatabase } from "@/lib/db";
+import { Submission } from "@/lib/models/submission";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 

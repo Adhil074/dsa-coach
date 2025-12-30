@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../../lib/db";
-import { User } from "../../../../../lib/models/user"; //these two lines let signup route talk with mongodb and user schema
+import { connectToDatabase } from "@/lib/db";
+import { User } from "@/lib/models/user"; //these two lines let signup route talk with mongodb and user schema
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {

@@ -3,9 +3,9 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { connectToDatabase } from "../../../../../lib/db";
-import { User } from "../../../../../lib/models/user";
-import { Progress } from "../../../../../lib/models/progress";
+import { connectToDatabase } from "@/lib/db";
+import { User } from "@/lib/models/user";
+import { Progress } from "@/lib/models/progress";
 import { Types } from "mongoose";
 
 // Type for JWT token from NextAuth
