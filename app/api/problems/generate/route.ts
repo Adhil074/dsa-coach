@@ -187,18 +187,18 @@ export async function POST(request: Request) {
   }
 }
 interface DbProblemDoc {
-  _id: string; // MongoDB IDs are strings when fetched
+  _id: string; 
   title?: string;
   topic?: string;
   description?: string;
   examples?: { input: string; output: string }[];
-  constraints?: string; // Assume string; adjust if array/object
+  constraints?: string; 
   hiddenTestsCount?: number;
   visibleTestsCount?: number;
   optimalTime?: string;
   optimalSpace?: string;
 }
-// Convert a DB doc (mongoose) to our GeneratedProblem shape
+
 function docToGeneratedProblem(doc: DbProblemDoc): GeneratedProblem {
   return {
     id: String(doc._id),

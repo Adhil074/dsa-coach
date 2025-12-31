@@ -10,9 +10,7 @@ import { Submission } from "@/lib/models/submission";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
-/* =======================
-   Types
-======================= */
+//types
 
 type Verdict = "correct_optimal" | "correct_suboptimal" | "incorrect";
 
@@ -39,13 +37,11 @@ interface IProblem {
   difficulty?: string;
 }
 
-/* =======================
-   Route
-======================= */
+//route
 
 export async function POST(request: NextRequest) {
   try {
-    /* ---------- Auth ---------- */
+    //auth
     const token = (await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
@@ -55,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    /* ---------- Parse body ---------- */
+    //parse body
     const body = (await request.json()) as Partial<SubmitBody>;
 
     if (!body.problemId || !body.code || !body.verdict) {
@@ -67,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const solvedNow = body.verdict !== "incorrect";
 
-    /* ---------- DB ---------- */
+    //db
     await connectToDatabase();
 
     const user = (await User.findOne({
@@ -89,7 +85,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* ---------- Save submission ---------- */
+    //save submission
     await Submission.create({
       userId: user._id,
       problemId: problem._id,
@@ -102,7 +98,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     });
 
-    /* ---------- Update progress (PER PROBLEM ONLY) ---------- */
+    //Update progress per problem
     await Progress.findOneAndUpdate(
       {
         userId: user._id,

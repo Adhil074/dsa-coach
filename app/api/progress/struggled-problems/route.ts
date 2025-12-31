@@ -1,5 +1,3 @@
-// app/api/progress/struggled-problems/route.ts
-
 export const runtime = "nodejs";
 
 import { NextResponse, NextRequest } from "next/server";
@@ -85,9 +83,7 @@ export async function GET(request: NextRequest) {
       // If last 2 submissions are correct → hide
       if (
         lastTwo.length === 2 &&
-        lastTwo.every(
-          (s) => s.verdict === "correct_optimal"
-        )
+        lastTwo.every((s) => s.verdict === "correct_optimal")
       ) {
         continue;
       }

@@ -1,5 +1,3 @@
-// app/api/progress/summary/route.ts
-
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -10,7 +8,7 @@ import { User } from "@/lib/models/user";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
-/* ---------------- Types ---------------- */
+//types
 
 interface AuthToken {
   email?: string;
@@ -50,11 +48,11 @@ interface SummaryResponse {
   difficultyStats: Record<"easy" | "medium" | "hard", DifficultyStats>;
 }
 
-/* ---------------- Route ---------------- */
+//route
 
 export async function GET(request: NextRequest) {
   try {
-    /* 1. Auth */
+    //auth
     const token = (await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
@@ -64,10 +62,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(emptySummary());
     }
 
-    /* 2. DB */
+    //db
     await connectToDatabase();
 
-    /* 3. User */
+    //user
     const user = (await User.findOne({
       email: token.email,
     }).lean()) as UserDoc | null;
@@ -76,12 +74,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(emptySummary());
     }
 
-    /* 4. Fetch progress (LEAN is IMPORTANT) */
+    // Fetch progress (LEAN is IMPORTANT)
     const progresses = (await Progress.find({
       userId: user._id,
     }).lean()) as ProgressDoc[];
 
-    /* 5. Aggregate */
+    // Aggregate
     let totalSolved = 0;
     let totalAttempts = 0;
     let failedAttempts = 0;
@@ -128,7 +126,7 @@ export async function GET(request: NextRequest) {
       difficultyStats,
     } satisfies SummaryResponse);
 
-    /* 6. No cache */
+    // No cache
     res.headers.set("Cache-Control", "no-store");
     return res;
   } catch (err) {
@@ -137,7 +135,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/* ---------------- Helpers ---------------- */
+// Helpers
 
 function emptySummary(): SummaryResponse {
   return {

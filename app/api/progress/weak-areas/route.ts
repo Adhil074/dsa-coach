@@ -1,5 +1,3 @@
-// app/api/progress/weak-areas/route.ts
-
 export const runtime = "nodejs";
 
 import { NextResponse, NextRequest } from "next/server";
@@ -9,7 +7,7 @@ import { User } from "@/lib/models/user";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
-/* ---------------- Types ---------------- */
+//types
 
 interface AuthToken {
   email?: string;
@@ -34,7 +32,7 @@ interface WeakAreaResponse {
   reason: string;
 }
 
-/* ---------------- Route ---------------- */
+//route
 
 export async function GET(request: NextRequest) {
   try {
@@ -114,10 +112,7 @@ export async function GET(request: NextRequest) {
 
       if (t.easyFails >= t.mediumFails && t.easyFails >= t.hardFails) {
         reason = "Basics need strengthening";
-      } else if (
-        t.mediumFails >= t.easyFails &&
-        t.mediumFails >= t.hardFails
-      ) {
+      } else if (t.mediumFails >= t.easyFails && t.mediumFails >= t.hardFails) {
         reason = "Problem-solving approach needs improvement";
       } else if (t.hardFails > 0) {
         reason = "Advanced concepts need revision";

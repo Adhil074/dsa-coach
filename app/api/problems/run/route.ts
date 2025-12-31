@@ -8,7 +8,7 @@ import { Types } from "mongoose";
 
 type RunRequestBody = {
   problemId: string;
-  code: string; // user-submitted JS code (string)
+  code: string; 
   language?: string; // only "javascript" supported
   timeoutMs?: number;
 };
@@ -30,7 +30,7 @@ type ProblemDoc = {
   difficulty?: string;
 };
 
-// Naive parser to extract variable names from "a=1;b=[1,2];" style strings */
+
 function parseArgNamesFromInput(input: string): string[] {
   const parts = input
     .split(";")
@@ -110,9 +110,11 @@ export async function POST(request: Request) {
     // sandbox globals template
     const sandboxGlobalsTemplate: Record<string, unknown> = {
       console: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         log: (..._args: unknown[]) => {
           /* no-op */
         },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         error: (..._args: unknown[]) => {
           /* no-op */
         },
