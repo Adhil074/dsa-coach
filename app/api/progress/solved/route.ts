@@ -113,7 +113,14 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(results);
+    const response = NextResponse.json(results);
+    
+    // Disable caching to ensure fresh data
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+
+    return response;
   } catch (err) {
     console.error("GET /api/progress/solved error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

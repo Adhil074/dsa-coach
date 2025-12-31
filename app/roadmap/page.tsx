@@ -1,4 +1,6 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import React, { JSX } from "react";
 import { useRouter } from "next/navigation";
@@ -15,16 +17,21 @@ type RoadmapItem = {
 export default function RoadmapPage(): JSX.Element {
   const router = useRouter();
   const [items, setItems] = React.useState<RoadmapItem[]>([]);
+
   const [expandedPhase, setExpandedPhase] = React.useState<string | null>(
     "phase-1"
   );
 
+  // Fetch roadmap data with cache-busting
   React.useEffect(() => {
-    fetch("/api/roadmap")
+    fetch(`/api/roadmap?t=${Date.now()}`)
       .then((res) => res.json())
       .then((data) => {
         const list: RoadmapItem[] = Array.isArray(data) ? data : data.roadmap;
         setItems(list);
+      })
+      .catch((err) => {
+        console.error("Failed to load roadmap:", err);
       });
   }, []);
 

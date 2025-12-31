@@ -1,5 +1,6 @@
 "use client";
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import React from "react";
 import { useRouter } from "next/navigation";
 
@@ -48,7 +49,7 @@ export default function ProgressPage() {
   >([]);
 
   React.useEffect(() => {
-    fetch("/api/progress/struggled-problems")
+    fetch(`/api/progress/struggled-problems?t=${Date.now()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error("Failed");
         return res.json();
@@ -67,11 +68,11 @@ export default function ProgressPage() {
     setError(null);
 
     Promise.all([
-      fetch("/api/progress/summary").then(async (res) => {
+      fetch(`/api/progress/summary?t=${Date.now()}`).then(async (res) => {
         if (!res.ok) throw new Error("Summary fetch failed");
         return (await res.json()) as SummaryResponse;
       }),
-      fetch("/api/progress/weak-areas").then(async (res) => {
+      fetch(`/api/progress/weak-areas?t=${Date.now()}`).then(async (res) => {
         if (!res.ok) return { weakAreas: [] };
         return await res.json();
       }),

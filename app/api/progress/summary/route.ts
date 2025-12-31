@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Progress } from "@/lib/models/progress";
+import { User } from "@/lib/models/user";
+import { getToken } from "next-auth/jwt";
 
 interface TopicStats {
   solved: number;
@@ -22,11 +24,28 @@ interface SummaryResponse {
   difficultyStats: Record<"easy" | "medium" | "hard", DifficultyStats>;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Auth: Get user from token
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (!token || typeof token.email !== "string") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectToDatabase();
 
-    const all = await Progress.find({});
+    // Find user by email
+    const user = await User.findOne({ email: token.email }).lean();
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Query ONLY this user's progress
+    const all = await Progress.find({ userId: user._id });
 
     let totalSolved = 0;
     let totalAttempts = 0;
@@ -75,7 +94,14 @@ export async function GET() {
       difficultyStats,
     };
 
-    return NextResponse.json(response);
+    const res = NextResponse.json(response);
+    
+    // Disable caching to ensure fresh data
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+
+    return res;
   } catch (err) {
     console.error("Progress summary error:", err);
     return NextResponse.json(

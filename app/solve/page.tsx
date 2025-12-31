@@ -464,7 +464,14 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
         <div className="relative flex items-center justify-center">
           {/* Back button - left */}
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => {
+              // Invalidate cache for roadmap when returning
+              router.push("/dashboard");
+              // Clear local storage or trigger refresh on return
+              setTimeout(() => {
+                window.location.href = "/roadmap";
+              }, 100);
+            }}
             className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
           >
             ← Back

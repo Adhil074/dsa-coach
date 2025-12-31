@@ -1,5 +1,6 @@
 "use client";
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
@@ -24,7 +25,7 @@ export default function SolvedPage() {
   useEffect(() => {
     async function loadSolved() {
       try {
-        const res = await fetch("/api/progress/solved");
+        const res = await fetch(`/api/progress/solved?t=${Date.now()}`);
         if (!res.ok) {
           setError("Failed to load solved problems");
           setLoading(false);
