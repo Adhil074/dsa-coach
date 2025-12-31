@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    // Get userId from token (could be in 'sub' or 'id')
+    const userId = (token as any)?.sub || (token as any)?.id;
+
     // Return empty data if not authenticated
-    if (!token || typeof token.sub !== "string") {
+    if (!token || !userId) {
       return NextResponse.json({ struggledProblems: [] });
     }
 
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
     const candidates = await Submission.aggregate([
       {
         $match: {
-          userId: new Types.ObjectId(token.sub),
+          userId: new Types.ObjectId(userId),
         },
       },
       {
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
     // for each candidate, check LAST 2 submissions
     for (const c of candidates) {
       const lastTwo = await Submission.find({
-        userId: token.sub,
+        userId: new Types.ObjectId(userId),
         problemId: c._id,
       })
         .sort({ createdAt: -1 })

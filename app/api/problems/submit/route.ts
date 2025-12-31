@@ -70,11 +70,12 @@ export async function POST(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     })) as UserToken | null;
 
-    if (!token || typeof token.email !== "string") {
+    // Check for email in token (it should be there from callbacks)
+    const userEmail = (token as any)?.email || token?.email;
+    
+    if (!token || !userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const userEmail = token.email;
 
     // Parse body
     const body = (await request

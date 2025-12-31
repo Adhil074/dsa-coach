@@ -14,8 +14,11 @@ export async function GET(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    // Get userId from token (could be in 'sub' or 'id' depending on NextAuth version/config)
+    const userId = (token as any)?.sub || (token as any)?.id;
+
     // Return empty data if not authenticated
-    if (!token || typeof token.sub !== "string") {
+    if (!token || !userId) {
       return NextResponse.json({ weakAreas: [] });
     }
 
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
     const data = await Submission.aggregate([
       {
         $match: {
-          userId: new Types.ObjectId(token.sub),
+          userId: new Types.ObjectId(userId),
         },
       },
       {

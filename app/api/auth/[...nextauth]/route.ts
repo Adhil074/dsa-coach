@@ -51,6 +51,25 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
 
+  callbacks: {
+    async jwt({ token, user }) {
+      // On initial sign in, user object is available
+      if (user) {
+        token.email = user.email;
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Pass token data to session
+      if (session.user) {
+        session.user.email = token.email as string;
+        (session.user as any).id = token.id;
+      }
+      return session;
+    },
+  },
+
   pages: {
     signIn: "/login", //  custom login page route
   },

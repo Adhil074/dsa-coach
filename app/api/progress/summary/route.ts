@@ -32,8 +32,11 @@ export async function GET(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    // Get email from token (it might be in different places depending on callbacks)
+    const userEmail = (token as any)?.email || token?.email;
+
     // Return empty data if not authenticated
-    if (!token || typeof token.email !== "string") {
+    if (!token || !userEmail) {
       const emptyResponse: SummaryResponse = {
         totalSolved: 0,
         totalAttempts: 0,
@@ -51,7 +54,7 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
 
     // Find user by email
-    const user = await User.findOne({ email: token.email }).lean();
+    const user = await User.findOne({ email: userEmail }).lean();
     if (!user) {
       const emptyResponse: SummaryResponse = {
         totalSolved: 0,
