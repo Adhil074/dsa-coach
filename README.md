@@ -2,6 +2,8 @@
 
 - Practice DSA smartly. Track progress. Improve faster -
 
+🌐Live Demo:https://dsa-coach-mauve.vercel.app/
+
 DSA Nexus is a full-stack web app built to help beginners and intermediate developers practice Data Structures & Algorithms in a structured, feedback-driven way — not just solve random problems and forget them.
 This project focuses on learning visibility: knowing what you solved, where you struggle, and what to fix next.
 
