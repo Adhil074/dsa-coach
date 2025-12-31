@@ -1,36 +1,145 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+🚀 DSA Nexus
 
-## Getting Started
+- Practice DSA smartly. Track progress. Improve faster -
 
-First, run the development server:
+DSA Nexus is a full-stack web app built to help beginners and intermediate developers practice Data Structures & Algorithms in a structured, feedback-driven way — not just solve random problems and forget them.
+This project focuses on learning visibility: knowing what you solved, where you struggle, and what to fix next.
 
-```bash
+🎯 Why DSA Nexus?
+
+Most platforms tell you what to solve.
+DSA Nexus tells you how you are actually doing.
+It tracks your progress deeply and highlights:
+
+- what you’ve mastered
+- where you’re weak
+- which problems you repeatedly struggle with
+- provides you a structured roadmap
+  This turns DSA practice from guesswork into a clear improvement loop.
+
+👥 Target Audience
+
+- Beginners starting DSA who want structure.
+- Intermediate developers preparing for interviews and wanting insight into their weak areas.
+
+✨ Core Features
+
+✅ 1. Problem Practice & Evaluation
+
+- Solve curated DSA problems by topic and difficulty
+- Submit solutions and get evaluated
+- Supports multiple verdicts (correct / suboptimal / incorrect)
+
+📊 2. Progress Tracking (Topic + Difficulty)
+
+- Tracks attempts, failures, and solved count
+- Progress breakdown by:
+  > Topic (arrays, strings, etc.)
+  > Difficulty (easy / medium / hard)
+- Always shows fresh data (no stale cache issues)
+
+🧠 3. Weak Areas Detection
+
+- Automatically detects weak topics based on:
+  > failure rate
+  > repeated incorrect attempts
+- Helps users focus on what actually needs improvement
+
+⚠️ 4. Struggled Problems Detection
+
+- Flags problems where the user:
+  > fails multiple times
+  > submits suboptimal solutions repeatedly
+- Auto-hides problems once the user genuinely improves.
+
+🤖 5. AI Assistant
+
+- On-demand help while solving problems.
+- Provides:
+  > hints
+  > explanations
+  > guidance without directly giving answers
+- Designed to assist learning, not replace thinking.
+
+🔐 6. Authentication
+
+- Secure email + password authentication.
+- Built using NextAuth.
+- JWT-based sessions (production-ready).
+- Proper session & token typing (TypeScript safe).
+
+🧱 Tech Stack
+
+- Frontend
+
+* HTML
+* CSS
+* TypeScript
+* React.js
+* Next.js (App Router)
+* Tailwind CSS
+
+- Backend
+
+* Next.js API Routes
+* MongoDB
+* Mongoose
+* NextAuth (JWT strategy)
+
+- Code Evaluation
+
+* Judge0 API (for solution execution & verdicts)
+
+- Deployment
+
+* Vercel
+
+🏗️ Architecture Highlights
+
+- Clean separation of concerns (auth, progress, submissions).
+- Server-side auth verification on every protected API.
+- No unsafe any usage in core logic.
+- Cache-safe APIs (no-store) to avoid stale progress data.
+- Versioned release (v1.0.0) for rollback safety.
+
+📈 Current Status
+
+- Fully deployed.
+- Auth, submissions, progress, AI assistant working.
+- Stable release tagged as v1.0.0.
+- Actively evolving (features added on top of a stable base).
+
+🧪 Local Setup
+
+git clone https://github.com/Adhil074/dsa-coach.git
+cd dsa-coach
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create a .env.local file with:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+MONGODB_URI=your_mongodb_uri
+NEXTAUTH_SECRET=your_secret
+NEXTAUTH_URL=http://localhost:3000
+JUDGE0_API_URL=...
+JUDGE0_API_KEY=...
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🧠 What This Project Demonstrates Recruiters?
 
-## Learn More
+- Demonstrates ability to build end-to-end production applications.
+- Demonstrates ability to understand state, auth, data consistency.
+- Demonstrates ability to care about real user problems, not just features.
+- Demonstrates ability to debug, refactor, and stabilize complex flows.
+- Demonstrates ability to ship, deploy, version, and iterate properly.
 
-To learn more about Next.js, take a look at the following resources:
+📌 Roadmap (Planned for future)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Company-specific problem sets
+- Time & space complexity insights
+- Personalized daily practice plan
+- Performance analytics over time
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+👤 Author
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built by Adhil Mohammed.
+Focused on clean architecture, correctness, and real learning impact.
