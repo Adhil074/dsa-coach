@@ -1,35 +1,48 @@
+// app/api/progress/struggled-problems/route.ts
+
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Submission } from "@/lib/models/submission";
 import { Problem } from "@/lib/models/problem";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
+type AuthToken = {
+  sub?: string;
+};
+
+type AggregatedCandidate = {
+  _id: Types.ObjectId;
+  topic: string;
+  incorrectCount: number;
+  suboptimalCount: number;
+};
+
+type SubmissionDoc = {
+  verdict: "correct_optimal" | "correct_suboptimal" | "incorrect";
+};
+
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({
+    const token = (await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-    });
+    })) as AuthToken | null;
 
-    // Get userId from token (could be in 'sub' or 'id')
-    const userId = (token as any)?.sub || (token as any)?.id;
-
-    // Return empty data if not authenticated
-    if (!token || !userId) {
+    if (!token || !token.sub) {
       return NextResponse.json({ struggledProblems: [] });
     }
 
+    const userId = new Types.ObjectId(token.sub);
+
     await connectToDatabase();
 
-    // get all problems that crossed struggle threshold
-    const candidates = await Submission.aggregate([
+    const candidates = (await Submission.aggregate([
       {
         $match: {
-          userId: new Types.ObjectId(userId),
+          userId,
         },
       },
       {
@@ -37,10 +50,14 @@ export async function GET(request: NextRequest) {
           _id: "$problemId",
           topic: { $first: "$topic" },
           incorrectCount: {
-            $sum: { $cond: [{ $eq: ["$verdict", "incorrect"] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$verdict", "incorrect"] }, 1, 0],
+            },
           },
           suboptimalCount: {
-            $sum: { $cond: [{ $eq: ["$verdict", "suboptimal"] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ["$verdict", "correct_suboptimal"] }, 1, 0],
+            },
           },
         },
       },
@@ -52,24 +69,25 @@ export async function GET(request: NextRequest) {
           ],
         },
       },
-    ]);
+    ])) as AggregatedCandidate[];
 
     const struggledProblems = [];
 
-    // for each candidate, check LAST 2 submissions
     for (const c of candidates) {
-      const lastTwo = await Submission.find({
-        userId: new Types.ObjectId(userId),
+      const lastTwo = (await Submission.find({
+        userId,
         problemId: c._id,
       })
         .sort({ createdAt: -1 })
         .limit(2)
-        .lean();
+        .lean()) as SubmissionDoc[];
 
-      // If last 2 are correct → AUTO HIDE
+      // If last 2 submissions are correct → hide
       if (
         lastTwo.length === 2 &&
-        lastTwo.every((s) => s.verdict === "correct")
+        lastTwo.every(
+          (s) => s.verdict === "correct_optimal"
+        )
       ) {
         continue;
       }
@@ -78,7 +96,7 @@ export async function GET(request: NextRequest) {
       if (!problem) continue;
 
       struggledProblems.push({
-        problemId: c._id,
+        problemId: String(c._id),
         title: problem.title,
         topic: c.topic,
         difficulty: problem.difficulty,
@@ -87,10 +105,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       struggledProblems,
     });
+
+    response.headers.set("Cache-Control", "no-store");
+
+    return response;
   } catch (err) {
     console.error("Struggled problems error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

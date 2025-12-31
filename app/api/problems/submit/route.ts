@@ -10,16 +10,21 @@ import { Submission } from "@/lib/models/submission";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
-// Local interfaces inferred from code usage (minimal, based on accessed fields – adjust if schemas differ)
-interface UserToken {
+/* =======================
+   Types
+======================= */
+
+type Verdict = "correct_optimal" | "correct_suboptimal" | "incorrect";
+
+interface AuthToken {
   email?: string;
 }
 
-interface IProblem {
-  _id: Types.ObjectId;
-  topic?: string;
-  title?: string;
-  difficulty?: string;
+interface SubmitBody {
+  problemId: string;
+  code: string;
+  language: string;
+  verdict: Verdict;
 }
 
 interface IUser {
@@ -27,199 +32,111 @@ interface IUser {
   email: string;
 }
 
-interface IProgress {
-  userId: Types.ObjectId;
-  problemId: Types.ObjectId;
-  language?: string;
-  lastCode?: string;
-  topic?: string;
+interface IProblem {
+  _id: Types.ObjectId;
   title?: string;
+  topic?: string;
   difficulty?: string;
-  status?: "solved" | "attempted";
-  updatedAt?: Date;
-  solvedAt?: Date;
-  submissionCount?: number;
-  failedAttempts?: number;
-  solvedCount?: number;
 }
 
-interface ISubmission {
-  userId: Types.ObjectId;
-  problemId: Types.ObjectId;
-  code: string;
-  language: string;
-  solved: boolean;
-  topic: string;
-  difficulty: string;
-  verdict: "correct_optimal" | "correct_suboptimal" | "incorrect";
-  createdAt: Date;
-}
-
-interface SubmitBody {
-  problemId: string;
-  code: string;
-  language: string;
-  verdict?: "correct_optimal" | "correct_suboptimal" | "incorrect";
-}
+/* =======================
+   Route
+======================= */
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate using NextAuth token (typed safely)
+    /* ---------- Auth ---------- */
     const token = (await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-    })) as UserToken | null;
+    })) as AuthToken | null;
 
-    // Check for email in token (it should be there from callbacks)
-    const userEmail = (token as any)?.email || token?.email;
-    
-    if (!token || !userEmail) {
+    if (!token?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse body
-    const body = (await request
-      .json()
-      .catch(() => ({}))) as Partial<SubmitBody>;
-    const problemId = String(body.problemId ?? "");
-    const code = String(body.code ?? "");
-    const language = String(body.language ?? "javascript");
-    const verdict = body.verdict;
+    /* ---------- Parse body ---------- */
+    const body = (await request.json()) as Partial<SubmitBody>;
 
-    if (!problemId) {
+    if (!body.problemId || !body.code || !body.verdict) {
       return NextResponse.json(
-        { error: "problemId is required" },
-        { status: 400 }
-      );
-    }
-    if (!code) {
-      return NextResponse.json({ error: "code is required" }, { status: 400 });
-    }
-    if (!verdict) {
-      return NextResponse.json(
-        { error: "verdict is required" },
+        { error: "Invalid request body" },
         { status: 400 }
       );
     }
 
-    // Connect DB
+    const solvedNow = body.verdict !== "incorrect";
+
+    /* ---------- DB ---------- */
     await connectToDatabase();
 
-    // Resolve problem by id or slug (typed)
-    let problemDoc: IProblem | null = null;
-
-    if (Types.ObjectId.isValid(problemId)) {
-      try {
-        problemDoc = (await Problem.findById(
-          problemId
-        ).lean()) as IProblem | null;
-      } catch {
-        problemDoc = null;
-      }
-    }
-    if (!problemDoc) {
-      problemDoc = (await Problem.findOne({
-        slug: String(problemId).toLowerCase().trim(),
-      }).lean()) as IProblem | null;
-    }
-
-    if (!problemDoc) {
-      return NextResponse.json(
-        { error: `Problem not found: ${problemId}` },
-        { status: 404 }
-      );
-    }
-
-    // Find user (typed)
     const user = (await User.findOne({
-      email: userEmail,
+      email: token.email,
     }).lean()) as IUser | null;
+
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Determine solved state from verdict
-    const solvedNow = verdict !== "incorrect";
+    const problem = (await Problem.findById(
+      body.problemId
+    ).lean()) as IProblem | null;
 
-    // Save submission (typed object)
-    try {
-      await Submission.create({
-        userId: new Types.ObjectId(String(user._id)),
-        problemId: new Types.ObjectId(String(problemDoc._id)),
-        code,
-        language,
-        solved: solvedNow,
-        topic: String(problemDoc.topic ?? ""),
-        difficulty: String(problemDoc.difficulty ?? ""),
-        verdict,
-        createdAt: new Date(),
-      } as ISubmission);
-    } catch (err) {
-      console.error("Submission save error:", err);
-      // Non-fatal — do NOT block user
+    if (!problem) {
+      return NextResponse.json(
+        { error: "Problem not found" },
+        { status: 404 }
+      );
     }
 
-    // Update progress document (typed FilterQuery and UpdateQuery)
-    try {
-      const progressFilter = {
-        userId: new Types.ObjectId(String(user._id)),
-        problemId: new Types.ObjectId(String(problemDoc._id)),
-      };
+    /* ---------- Save submission ---------- */
+    await Submission.create({
+      userId: user._id,
+      problemId: problem._id,
+      code: body.code,
+      language: body.language,
+      verdict: body.verdict,
+      solved: solvedNow,
+      topic: problem.topic ?? "",
+      difficulty: problem.difficulty ?? "",
+      createdAt: new Date(),
+    });
 
-      const existing = (await Progress.findOne(
-        progressFilter
-      ).lean()) as IProgress | null;
+    /* ---------- Update progress (PER PROBLEM ONLY) ---------- */
+    await Progress.findOneAndUpdate(
+      {
+        userId: user._id,
+        problemId: problem._id,
+      },
+      {
+        $set: {
+          status: solvedNow ? "solved" : "attempted",
+          solvedAt: solvedNow ? new Date() : undefined,
+          lastCode: body.code,
+          language: body.language,
+          topic: problem.topic ?? "",
+          title: problem.title ?? "",
+          difficulty: problem.difficulty ?? "",
+          updatedAt: new Date(),
+        },
+        $inc: {
+          submissionCount: 1,
+          ...(solvedNow ? {} : { failedAttempts: 1 }),
+        },
+      },
+      { upsert: true }
+    );
 
-      // Build updates safely: Partial for $set, Record for $inc (no dynamic keys/casts)
-      const setObj: Partial<IProgress> = {
-        language,
-        lastCode: code,
-        topic: String(problemDoc.topic ?? ""),
-        title: String(problemDoc.title ?? ""),
-        difficulty: String(problemDoc.difficulty ?? ""),
-        status: solvedNow ? "solved" : "attempted",
-        updatedAt: new Date(),
-      };
-
-      const incObj: Record<string, number> = {
-        submissionCount: 1,
-      };
-      if (!solvedNow) {
-        incObj.failedAttempts = 1;
-      }
-
-      if (solvedNow) {
-        setObj.solvedAt = new Date(); // Direct assign
-        if (!existing || existing.status !== "solved") {
-          incObj.solvedCount = (existing?.solvedCount ?? 0) + 1;
-        }
-        // If already solved, just update timestamp (no inc) – logic preserved
-      }
-
-      const updateObj = {
-        $set: setObj,
-        $inc: incObj,
-      };
-
-      await Progress.findOneAndUpdate(progressFilter, updateObj, {
-        upsert: true,
-        new: true,
-      });
-    } catch (err) {
-      console.error("Progress save error:", err);
-      // Non-fatal
-    }
-
-    // Return success with verdict info
     return NextResponse.json({
       success: true,
-      message: "Submission evaluated and saved",
       solved: solvedNow,
-      verdict: verdict,
+      verdict: body.verdict,
     });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error("Submit error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (err) {
+    console.error("Submit error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

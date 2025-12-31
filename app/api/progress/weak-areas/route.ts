@@ -1,33 +1,66 @@
+// app/api/progress/weak-areas/route.ts
+
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { Submission } from "@/lib/models/submission";
+import { User } from "@/lib/models/user";
 import { getToken } from "next-auth/jwt";
 import { Types } from "mongoose";
 
+/* ---------------- Types ---------------- */
+
+interface AuthToken {
+  email?: string;
+}
+
+interface UserDoc {
+  _id: Types.ObjectId;
+  email: string;
+}
+
+interface WeakAreaAgg {
+  _id: string;
+  totalAttempts: number;
+  totalIncorrect: number;
+  easyFails: number;
+  mediumFails: number;
+  hardFails: number;
+}
+
+interface WeakAreaResponse {
+  topic: string;
+  reason: string;
+}
+
+/* ---------------- Route ---------------- */
+
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({
+    const token = (await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-    });
+    })) as AuthToken | null;
 
-    // Get userId from token (could be in 'sub' or 'id' depending on NextAuth version/config)
-    const userId = (token as any)?.sub || (token as any)?.id;
-
-    // Return empty data if not authenticated
-    if (!token || !userId) {
+    if (!token?.email) {
       return NextResponse.json({ weakAreas: [] });
     }
 
     await connectToDatabase();
 
-    const data = await Submission.aggregate([
+    const user = (await User.findOne({
+      email: token.email,
+    }).lean()) as UserDoc | null;
+
+    if (!user) {
+      return NextResponse.json({ weakAreas: [] });
+    }
+
+    const data = (await Submission.aggregate([
       {
         $match: {
-          userId: new Types.ObjectId(userId),
+          userId: new Types.ObjectId(String(user._id)),
         },
       },
       {
@@ -67,7 +100,6 @@ export async function GET(request: NextRequest) {
         },
       },
       {
-        
         $match: {
           totalIncorrect: { $gte: 3 },
           $expr: {
@@ -75,14 +107,17 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    ]);
+    ])) as WeakAreaAgg[];
 
-    const weakAreas = data.map((t) => {
+    const weakAreas: WeakAreaResponse[] = data.map((t) => {
       let reason = "Concept clarity required";
 
       if (t.easyFails >= t.mediumFails && t.easyFails >= t.hardFails) {
         reason = "Basics need strengthening";
-      } else if (t.mediumFails >= t.easyFails && t.mediumFails >= t.hardFails) {
+      } else if (
+        t.mediumFails >= t.easyFails &&
+        t.mediumFails >= t.hardFails
+      ) {
         reason = "Problem-solving approach needs improvement";
       } else if (t.hardFails > 0) {
         reason = "Advanced concepts need revision";
@@ -99,8 +134,10 @@ export async function GET(request: NextRequest) {
       weakAreas,
     });
 
-    // Disable caching to ensure fresh data
-    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
 

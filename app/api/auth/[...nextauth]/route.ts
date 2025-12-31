@@ -1,5 +1,4 @@
-import NextAuth from "next-auth";
-import { AuthOptions } from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { connectToDatabase } from "@/lib/db";
@@ -49,25 +48,6 @@ export const authOptions: AuthOptions = {
 
   session: {
     strategy: "jwt",
-  },
-
-  callbacks: {
-    async jwt({ token, user }) {
-      // On initial sign in, user object is available
-      if (user) {
-        token.email = user.email;
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      // Pass token data to session
-      if (session.user) {
-        session.user.email = token.email as string;
-        (session.user as any).id = token.id;
-      }
-      return session;
-    },
   },
 
   pages: {
