@@ -32,8 +32,20 @@ export async function GET(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    // Return empty data if not authenticated
     if (!token || typeof token.email !== "string") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const emptyResponse: SummaryResponse = {
+        totalSolved: 0,
+        totalAttempts: 0,
+        failedAttempts: 0,
+        topicStats: {},
+        difficultyStats: {
+          easy: { solved: 0, attempts: 0, failed: 0 },
+          medium: { solved: 0, attempts: 0, failed: 0 },
+          hard: { solved: 0, attempts: 0, failed: 0 },
+        },
+      };
+      return NextResponse.json(emptyResponse);
     }
 
     await connectToDatabase();
@@ -41,7 +53,18 @@ export async function GET(request: NextRequest) {
     // Find user by email
     const user = await User.findOne({ email: token.email }).lean();
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const emptyResponse: SummaryResponse = {
+        totalSolved: 0,
+        totalAttempts: 0,
+        failedAttempts: 0,
+        topicStats: {},
+        difficultyStats: {
+          easy: { solved: 0, attempts: 0, failed: 0 },
+          medium: { solved: 0, attempts: 0, failed: 0 },
+          hard: { solved: 0, attempts: 0, failed: 0 },
+        },
+      };
+      return NextResponse.json(emptyResponse);
     }
 
     // Query ONLY this user's progress

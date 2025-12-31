@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET,
     });
 
+    // Return empty data if not authenticated
     if (!token || typeof token.sub !== "string") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ struggledProblems: [] });
     }
 
     await connectToDatabase();
