@@ -1,3 +1,5 @@
+//app\roadmap\page.tsx
+
 "use client";
 
 import React, { JSX } from "react";
@@ -10,6 +12,8 @@ type RoadmapItem = {
   topic: string;
   difficulty: "easy" | "medium" | "hard";
   solved?: boolean;
+  phase: number;
+  order:number;
 };
 
 export default function RoadmapPage(): JSX.Element {
@@ -17,7 +21,7 @@ export default function RoadmapPage(): JSX.Element {
   const [items, setItems] = React.useState<RoadmapItem[]>([]);
 
   const [expandedPhase, setExpandedPhase] = React.useState<string | null>(
-    "phase-1"
+    "phase-1",
   );
 
   // Fetch roadmap data with cache-busting
@@ -34,36 +38,43 @@ export default function RoadmapPage(): JSX.Element {
   }, []);
 
   const solvedProblemIds = new Set(
-    items.filter((p) => p.solved === true).map((p) => p.problemId)
+    items.filter((p) => p.solved === true).map((p) => p.problemId),
   );
 
+  
+
   function getPhaseProblems(phase: RoadmapPhase): RoadmapItem[] {
+    const phaseNumber = Number(phase.id.split("-")[1]);
+
     return items
       .filter(
         (p) =>
+          p.phase === phaseNumber &&
           phase.topics.includes(p.topic) &&
-          phase.difficulties.includes(p.difficulty ?? "")
+          phase.difficulties.includes(p.difficulty),
       )
-      .sort((a, b) => {
-        const order = { easy: 1, medium: 2, hard: 3 };
-        return order[a.difficulty] - order[b.difficulty];
-      });
+      
+      .sort((a, b) => a.order - b.order);
   }
 
   function isPhaseUnlocked(phase: RoadmapPhase): boolean {
     if (!phase.unlockRule) return true;
     const prevPhase = ROADMAP.find(
-      (p) => p.id === phase.unlockRule?.requiredPhaseId
+      (p) => p.id === phase.unlockRule?.requiredPhaseId,
     );
     if (!prevPhase) return false;
 
     const prevProblems = getPhaseProblems(prevPhase);
     const solvedCount = prevProblems.filter((p) =>
-      solvedProblemIds.has(p.problemId)
+      solvedProblemIds.has(p.problemId),
     ).length;
 
     return solvedCount / prevProblems.length >= 0.7;
   }
+
+//   function isPhaseUnlocked(_phase: RoadmapPhase): boolean {
+//   return true; //  TEMPORARY DEBUG UNLOCK
+// }
 
   function getNextProblem(phase: RoadmapPhase): string | null {
     const problems = getPhaseProblems(phase);
@@ -80,7 +91,7 @@ export default function RoadmapPage(): JSX.Element {
           const unlocked = isPhaseUnlocked(phase);
           const phaseProblems = getPhaseProblems(phase);
           const solvedCount = phaseProblems.filter((p) =>
-            solvedProblemIds.has(p.problemId)
+            solvedProblemIds.has(p.problemId),
           ).length;
 
           const progress =
@@ -132,7 +143,7 @@ export default function RoadmapPage(): JSX.Element {
                 }
                 className="mt-3 text-sm text-blue-400 hover:underline"
               >
-                🤖 Explain this phase
+                 Explain this phase
               </button>
 
               {/* Phase Problems */}
@@ -174,7 +185,7 @@ export default function RoadmapPage(): JSX.Element {
                           <button
                             onClick={() =>
                               router.push(
-                                `/ai?type=concept&problemId=${p.problemId}`
+                                `/ai?type=concept&problemId=${p.problemId}`,
                               )
                             }
                             className="text-sm text-blue-400 hover:underline"
@@ -204,3 +215,4 @@ export default function RoadmapPage(): JSX.Element {
     </main>
   );
 }
+

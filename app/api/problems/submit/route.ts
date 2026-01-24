@@ -1,3 +1,5 @@
+// app\api\problems\submit\route.ts
+
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -35,6 +37,7 @@ interface IProblem {
   title?: string;
   topic?: string;
   difficulty?: string;
+  phase: 1 | 2 | 3 | 4 | 5;
 }
 
 //route
@@ -57,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (!body.problemId || !body.code || !body.verdict) {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,15 +78,13 @@ export async function POST(request: NextRequest) {
     }
 
     const problem = (await Problem.findById(
-      body.problemId
+      body.problemId,
     ).lean()) as IProblem | null;
 
     if (!problem) {
-      return NextResponse.json(
-        { error: "Problem not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
+    const problemPhase = problem.phase;
 
     //save submission
     await Submission.create({
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
           topic: problem.topic ?? "",
           title: problem.title ?? "",
           difficulty: problem.difficulty ?? "",
+          phase: problemPhase,
           updatedAt: new Date(),
         },
         $inc: {
@@ -120,7 +122,7 @@ export async function POST(request: NextRequest) {
           ...(solvedNow ? {} : { failedAttempts: 1 }),
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     return NextResponse.json({
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
     console.error("Submit error:", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,3 +1,5 @@
+//lib\roadmapConfiig.ts
+
 export type UnlockRule = null | {
   requiredPhaseId: string;
 };
@@ -42,7 +44,7 @@ export const ROADMAP: RoadmapPhase[] = [
     id: "phase-3",
     title: "Phase 3: Intermediate DSA",
     order: 3,
-    topics: ["linked-list", "graphs"],
+    topics: ["linked-list", "graphs", "dp"],
     difficulties: ["medium", "hard", "easy"],
     unlockRule: { requiredPhaseId: "phase-2" },
     description:
@@ -54,7 +56,7 @@ export const ROADMAP: RoadmapPhase[] = [
     title: "Phase 4: Advanced Patterns",
     order: 4,
     topics: ["graphs", "dp"],
-    difficulties: ["hard", "medium", "easy"],
+    difficulties: [ "medium", "hard"],
     unlockRule: { requiredPhaseId: "phase-3" },
     description:
       "Master graph-heavy problems and dynamic programming. Learn state transitions, memoization, and optimization techniques.",

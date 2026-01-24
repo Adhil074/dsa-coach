@@ -1,3 +1,5 @@
+//scripts\seedProblems.mjs
+
 import mongoose from "mongoose";
 
 const MONGO_URI =
@@ -406,24 +408,52 @@ If no such subarray exists, return an empty array.`,
   },
 ];
 
+
+function baseProblem(p, i) {
+  return {
+    title: `${p.title} (${p.difficulty})`,
+    slug: `${p.topic}-${p.difficulty}-${Date.now()}-${i}`,
+    description: p.description,
+    topic: p.topic,
+    difficulty: p.difficulty,
+    optimalTime: p.optimalTime,
+    optimalSpace: p.optimalSpace,
+    examples: p.examples,
+    testCases: p.testCases,
+    constraints: p.constraints || null,
+    supportedLanguages: ["javascript", "python", "java", "cpp"],
+    generatedByAI: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
 // Build final docs
 
-const docs = seedList.map((p, i) => ({
-  title: `${p.title} (${p.difficulty})`,
-  slug: `${p.topic}-${p.difficulty}-${Date.now()}-${i}`,
-  description: p.description,
-  topic: p.topic,
-  difficulty: p.difficulty,
-  optimalTime: p.optimalTime,
-  optimalSpace: p.optimalSpace,
-  examples: p.examples,
-  testCases: p.testCases,
-  constraints: p.constraints || null,
-  supportedLanguages: ["javascript", "python", "java", "cpp"],
-  generatedByAI: false,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}));
+
+const docs = seedList.flatMap((p, i) => {
+  const phaseMap = {
+    arrays: 1,
+    strings: 1,
+    "linked-list": 2,
+    dp: 4,
+    graphs: 3,
+  };
+
+  const base = baseProblem(p, i);
+
+  return [
+    {
+      ...base,
+      phase: phaseMap[p.topic] ?? 1, 
+    },
+    {
+      ...base,
+      phase: 5, 
+      slug: `${base.slug}-phase5`,
+    },
+  ];
+});
 
 // Seeder
 
@@ -453,3 +483,4 @@ async function seed() {
 }
 
 seed();
+

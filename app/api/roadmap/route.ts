@@ -1,3 +1,5 @@
+// app\api\roadmap\route.ts
+
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -7,7 +9,6 @@ import { connectToDatabase } from "@/lib/db";
 import { Problem } from "@/lib/models/problem";
 import { Progress } from "@/lib/models/progress";
 import { User } from "@/lib/models/user";
-import { Types } from "mongoose";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -16,31 +17,11 @@ type RoadmapItem = {
   title: string;
   slug: string;
   topic: string;
-  difficulty: Difficulty | null;
+  difficulty: Difficulty;
   solved: boolean;
+  phase: number;
+  order:number;
 };
-
-const TOPICS: string[] = ["arrays", "strings", "linked-list", "dp", "graphs"];
-
-async function fetchProblem(
-  topic: string,
-  difficulty: Difficulty,
-  solvedSet: Set<string>
-): Promise<RoadmapItem | null> {
-  const p = await Problem.findOne({ topic, difficulty }).lean();
-  if (!p) return null;
-
-  const id = String((p._id as Types.ObjectId).toString());
-
-  return {
-    problemId: id,
-    title: String(p.title ?? "Untitled problem"),
-    slug: String(p.slug ?? ""),
-    topic: String(p.topic ?? topic),
-    difficulty: p.difficulty as Difficulty,
-    solved: solvedSet.has(id),
-  };
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,29 +46,41 @@ export async function GET(request: NextRequest) {
           .select({ problemId: 1 })
           .lean();
 
-        solvedSet = new Set(
-          solved.map((p) => String(p.problemId))
-        );
+        solvedSet = new Set(solved.map((p) => String(p.problemId)));
       }
     }
 
     // build roadmap
+    // build roadmap strictly by phase
     const roadmap: RoadmapItem[] = [];
 
-    for (const topic of TOPICS) {
-      const easy = await fetchProblem(topic, "easy", solvedSet);
-      const medium = await fetchProblem(topic, "medium", solvedSet);
-      const hard = await fetchProblem(topic, "hard", solvedSet);
+    const problems = await Problem.find({})
+  .sort({ phase: 1, order: 1 })
+  .select({ _id: 1, title: 1, slug: 1, topic: 1, difficulty: 1, phase: 1, order: 1,  })
+  .lean();
 
-      if (easy) roadmap.push(easy);
-      if (medium) roadmap.push(medium);
-      if (hard) roadmap.push(hard);
+    for (const p of problems) {
+      const id = String(p._id);
+
+      roadmap.push({
+        problemId: id,
+        title: p.title,
+        slug: p.slug,
+        topic: p.topic,
+        difficulty: p.difficulty,
+        solved: solvedSet.has(id),
+        phase: p.phase, // 👈 critical
+        order:p.order,
+      });
     }
 
     const response = NextResponse.json({ roadmap }, { status: 200 });
-    
-    // Disable caching to ensure fresh data
-    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
+    // disable caching to ensure fresh data
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
 
@@ -96,7 +89,8 @@ export async function GET(request: NextRequest) {
     console.error("Roadmap GET error:", err);
     return NextResponse.json(
       { error: "Failed to load roadmap" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
+

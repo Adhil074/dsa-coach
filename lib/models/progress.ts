@@ -1,3 +1,5 @@
+//lib\models\progress.ts
+
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 export interface IProgress extends Document {
   userId: Types.ObjectId;

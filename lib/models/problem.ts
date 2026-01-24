@@ -1,3 +1,5 @@
+//lib\models\problem.ts
+
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IExample {
@@ -28,15 +30,17 @@ export interface IProblem extends Document {
     | "dp"
     | "stack-queue";
   difficulty: "easy" | "medium" | "hard";
+  phase: 1 | 2 | 3 | 4 | 5;
   optimalTime: string;
   optimalSpace: string;
   examples: IExample[];
   testCases: ITestCase[];
-  constraints:string[];
+  constraints: string[];
   supportedLanguages: string[];
   generatedByAI: boolean;
   createdAt: Date;
   updatedAt: Date;
+  order:number;
 }
 
 const ExampleSchema = new Schema<IExample>(
@@ -45,7 +49,7 @@ const ExampleSchema = new Schema<IExample>(
     output: { type: String, required: true },
     explanation: { type: String },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const TestCaseSchema = new Schema<ITestCase>(
@@ -54,7 +58,7 @@ const TestCaseSchema = new Schema<ITestCase>(
     output: { type: String, required: true },
     isHidden: { type: Boolean, default: false }, // visible by default for seeded tests
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ProblemSchema: Schema<IProblem> = new Schema(
@@ -75,6 +79,7 @@ const ProblemSchema: Schema<IProblem> = new Schema(
       type: String,
       required: true,
     },
+
     topic: {
       type: String,
       required: true,
@@ -90,11 +95,21 @@ const ProblemSchema: Schema<IProblem> = new Schema(
         "stack-queue",
       ],
     },
+    order: {
+      type: Number,
+      required: true,
+      default:999,
+    },
     difficulty: {
       type: String,
       required: true,
       enum: ["easy", "medium", "hard"],
       default: "easy",
+    },
+    phase: {
+      type: Number,
+      required: true,
+      enum: [1, 2, 3, 4, 5],
     },
     optimalTime: {
       type: String,
@@ -125,8 +140,9 @@ const ProblemSchema: Schema<IProblem> = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const Problem: Model<IProblem> =
   mongoose.models.Problem || mongoose.model<IProblem>("Problem", ProblemSchema);
+
