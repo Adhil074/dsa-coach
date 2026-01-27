@@ -67,7 +67,6 @@ function SolvePageWrapper() {
 }
 export default SolvePageWrapper;
 
-
 function parseExamples(value: unknown): ExampleItem[] {
   if (!Array.isArray(value)) return [];
   const out: ExampleItem[] = [];
@@ -157,7 +156,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
 
 //component
 
- function SolvePage(): JSX.Element {
+function SolvePage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -179,7 +178,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
   } = useProblemStore();
 
   const [localProblem, setLocalProblem] = React.useState<LocalProblem | null>(
-    null
+    null,
   );
   const [localCode, setLocalCode] = React.useState<string>("");
   const [submissionResult, setSubmissionResult] =
@@ -221,7 +220,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
 
       try {
         const url = `/api/roadmap/problem?problemId=${encodeURIComponent(
-          roadmapProblemId
+          roadmapProblemId,
         )}`;
         const resp = await fetch(url);
         if (!resp.ok) {
@@ -305,7 +304,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
       /\b(?:function|const|let|var|export\s+function)\s+solution\b/;
     if (!solutionNameRegex.test(localCode)) {
       setSubmitError(
-        "Please define your solution as: `function solution(...) { ... }`"
+        "Please define your solution as: `function solution(...) { ... }`",
       );
       setIsSubmitting(false);
       return;
@@ -437,13 +436,13 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
         aiJson.verdict === "correct_optimal"
           ? "optimal"
           : aiJson.verdict === "correct_suboptimal"
-          ? "suboptimal"
-          : "incorrect"
+            ? "suboptimal"
+            : "incorrect",
       );
     } catch (err) {
       console.error("Submit error:", err);
       setSubmitError(
-        "Submit error:" + (err instanceof Error ? err.message : String(err))
+        "Submit error:" + (err instanceof Error ? err.message : String(err)),
       );
     } finally {
       setIsSubmitting(false);
@@ -465,12 +464,7 @@ function parseProblem(doc: unknown, fallbackId?: string): LocalProblem | null {
           {/* Back button - left */}
           <button
             onClick={() => {
-              // Invalidate cache for roadmap when returning
               router.push("/dashboard");
-              // Clear local storage or trigger refresh on return
-              setTimeout(() => {
-                window.location.href = "/roadmap";
-              }, 100);
             }}
             className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
           >

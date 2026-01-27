@@ -8,7 +8,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword,setShowPassword]=useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -46,7 +46,7 @@ export default function SignupPage() {
                   router.push("/login");
                 }, 1500);
               }
-            } catch (err) {
+            } catch {
               setError("Something went wrong. Please try again.");
             } finally {
               setIsLoading(false);
@@ -77,7 +77,6 @@ export default function SignupPage() {
             />
           </div>
 
-          
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}

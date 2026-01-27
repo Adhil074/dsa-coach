@@ -13,7 +13,7 @@ type RoadmapItem = {
   difficulty: "easy" | "medium" | "hard";
   solved?: boolean;
   phase: number;
-  order:number;
+  order: number;
 };
 
 export default function RoadmapPage(): JSX.Element {
@@ -41,8 +41,6 @@ export default function RoadmapPage(): JSX.Element {
     items.filter((p) => p.solved === true).map((p) => p.problemId),
   );
 
-  
-
   function getPhaseProblems(phase: RoadmapPhase): RoadmapItem[] {
     const phaseNumber = Number(phase.id.split("-")[1]);
 
@@ -53,7 +51,7 @@ export default function RoadmapPage(): JSX.Element {
           phase.topics.includes(p.topic) &&
           phase.difficulties.includes(p.difficulty),
       )
-      
+
       .sort((a, b) => a.order - b.order);
   }
 
@@ -72,9 +70,9 @@ export default function RoadmapPage(): JSX.Element {
     return solvedCount / prevProblems.length >= 0.7;
   }
 
-//   function isPhaseUnlocked(_phase: RoadmapPhase): boolean {
-//   return true; //  TEMPORARY DEBUG UNLOCK
-// }
+  //   function isPhaseUnlocked(_phase: RoadmapPhase): boolean {
+  //   return true; //  TEMPORARY DEBUG UNLOCK
+  // }
 
   function getNextProblem(phase: RoadmapPhase): string | null {
     const problems = getPhaseProblems(phase);
@@ -84,7 +82,16 @@ export default function RoadmapPage(): JSX.Element {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
-      <h1 className="text-2xl font-semibold mb-6">Learning Roadmap</h1>
+      <div className="relative flex items-center justify-center mb-4">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="absolute left-0 px-3 py-1.5 bg-slate-800 text-sm hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            ← Back
+          </button>
+
+          <h1 className="text-2xl font-bold text-center">Learning Roadmap</h1>
+        </div>
 
       <div className="space-y-6">
         {ROADMAP.sort((a, b) => a.order - b.order).map((phase) => {
@@ -143,7 +150,7 @@ export default function RoadmapPage(): JSX.Element {
                 }
                 className="mt-3 text-sm text-blue-400 hover:underline"
               >
-                 Explain this phase
+                Explain this phase
               </button>
 
               {/* Phase Problems */}
@@ -215,4 +222,3 @@ export default function RoadmapPage(): JSX.Element {
     </main>
   );
 }
-

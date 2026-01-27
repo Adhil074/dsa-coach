@@ -9,14 +9,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [username, setUsername] = useState<string>("User");
-  const [weakTopic, setWeakTopic] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [menuOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [suggestedProblem, setSuggestedProblem] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-  const [weeklySolved, setWeeklySolved] = useState<number | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -28,27 +22,6 @@ export default function DashboardPage() {
     if (session?.user?.name) {
       setUsername(session.user.name); // eslint-disable-next-line react-hooks/exhaustive-deps
     }
-  }, [session]);
-
-  useEffect(() => {
-    if (!session) return;
-    (async () => {
-      try {
-        const res = await fetch("/api/user/progress-summary");
-        if (!res.ok) return;
-        const data = await res.json();
-        setWeakTopic(data.weakTopics?.[0]?.topic ?? null);
-        const rec = data.recommendation ?? data.suggestedProblem ?? null;
-        if (rec)
-          setSuggestedProblem({
-            id: rec.problemId ?? rec.id,
-            title: rec.title ?? rec.name,
-          });
-        setWeeklySolved(data.weeklySolved ?? data.solvedThisWeek ?? null);
-      } catch (e) {
-        // API may not exist yet — ignore
-      }
-    })();
   }, [session]);
 
   if (status === "loading") return <div>Loading...</div>;
@@ -87,7 +60,7 @@ export default function DashboardPage() {
         </div>
         {/* Welcome Text - Center */}
         <h2 className="text-2xl font-semibold absolute left-1/2 transform -translate-x-1/2">
-          Hello <span className="text-blue-600">{username}</span>
+          Welcome back, <span className="text-blue-600">{username}</span>
         </h2>
       </header>
       <h1 className="text-4xl font-bold text-center mb-2">
