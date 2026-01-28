@@ -40,7 +40,6 @@ export default function LoginPage() {
           }}
         >
           <div>
-            <label className="block text-sm mb-1 text-zinc-400">Email</label>
             <input
               type="email"
               placeholder="Email"

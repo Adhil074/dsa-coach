@@ -55,7 +55,6 @@ export default function SignupPage() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm mb-1 text-gray-300">Name</label>
             <input
               type="text"
               placeholder="Enter your name"
@@ -66,7 +65,6 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-gray-300">Email</label>
             <input
               type="email"
               placeholder="Email"
