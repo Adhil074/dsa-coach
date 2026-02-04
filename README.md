@@ -90,7 +90,7 @@ It tracks your progress deeply and highlights:
 
 - Code Evaluation
 
-* Judge0 API (for solution execution & verdicts)
+* Code execution is done using a custom backend runner, and solution evaluation is handled using Gemini AI.
 
 - Deployment
 
